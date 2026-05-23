@@ -16,10 +16,6 @@ declare module 'react' {
   }
 }
 
-function randomId() {
-  return crypto.randomUUID()
-}
-
 export function Dropzone() {
   const setFiles = useUploadStore(
     (state) => state.setFiles,
