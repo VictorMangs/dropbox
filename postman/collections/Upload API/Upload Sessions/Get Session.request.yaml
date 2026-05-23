@@ -1,0 +1,29 @@
+$kind: http-request
+description: Retrieves an existing upload session by ID, including its associated file records. Returns 404 if the session does not exist.
+url: '{{baseURL}}/upload-sessions/{{sessionId}}'
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Response has id field matching sessionId", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("id");
+          pm.expect(jsonData.id).to.eql(pm.collectionVariables.get("sessionId"));
+      });
+
+      pm.test("Response has createdAt field", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("createdAt");
+      });
+
+      pm.test("Response has files array", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property("files");
+          pm.expect(jsonData.files).to.be.an("array");
+      });
+    language: text/javascript
+order: 2000

@@ -1,0 +1,32 @@
+$kind: http-request
+description: "Uploads a .zip file to the session. Expected validationState: 'cyber'. Attach a .zip file to the `file` field before sending."
+url: "{{baseURL}}/upload-sessions/{{sessionId}}/files"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: ""
+      description: Attach a .zip file here (e.g. bundle.zip)
+    - type: text
+      key: relativePath
+      value: archives/bundle.zip
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 200 or 201", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+
+      pm.test("validationState equals 'cyber'", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.validationState).to.eql("cyber");
+      });
+
+      pm.test("validationMessage equals 'Cyber routing required'", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.validationMessage).to.eql("Cyber routing required");
+      });
+    language: text/javascript
+order: 3000

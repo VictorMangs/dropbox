@@ -1,0 +1,27 @@
+$kind: http-request
+description: 'Verifies behavior with a non-existent session ID. The service throws NotFoundException and returns HTTP 404. Attach a .txt file to the `file` field before sending.'
+url: "{{baseURL}}/upload-sessions/invalid-session-id-999/files"
+method: POST
+body:
+  type: formdata
+  content:
+    - type: file
+      key: file
+      src: ""
+      description: Attach a .txt file here
+    - type: text
+      key: relativePath
+      value: test.txt
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status code is 404 (session not found)", function () {
+          pm.response.to.have.status(404);
+      });
+
+      pm.test("Response message contains 'not found'", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.message.toLowerCase()).to.include("not found");
+      });
+    language: text/javascript
+order: 5000
