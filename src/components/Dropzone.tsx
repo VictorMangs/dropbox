@@ -92,6 +92,12 @@ export function Dropzone() {
             progress: 0,
 
             status: 'pending',
+
+            priority: 'normal',
+
+            createdAt: new Date().toISOString(),
+
+            retryCount: 0,
           }),
         )
 

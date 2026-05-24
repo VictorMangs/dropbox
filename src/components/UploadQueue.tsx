@@ -2,9 +2,7 @@ import {
   processSingleUpload,
 } from '../services/uploadOrchestrator'
 
-import {
-  useUploadStore,
-} from '../store/uploadStore'
+import { useUploadStore } from '../store/uploadStore'
 
 export function UploadQueue() {
   const uploadQueue =
@@ -81,28 +79,67 @@ export function UploadQueue() {
         'uploading',
     ).length
 
+  const pendingUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'pending',
+    ).length
+
+  const pausedUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'paused',
+    ).length
+
+  const failedUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'failed',
+    ).length
+
   const summary = {
-    pending: 0,
-    uploading: 0,
-    paused: 0,
     completed: 0,
     failed: 0,
+    paused: 0,
     cancelled: 0,
   }
 
   for (const item of uploadQueue) {
-    summary[item.status] += 1
-  }
+    if (
+      item.status ===
+      'completed'
+    ) {
+      summary.completed += 1
+    }
 
-  if (
-    uploadQueue.length === 0
-  ) {
-    return null
+    if (
+      item.status ===
+      'failed'
+    ) {
+      summary.failed += 1
+    }
+
+    if (
+      item.status ===
+      'paused'
+    ) {
+      summary.paused += 1
+    }
+
+    if (
+      item.status ===
+      'cancelled'
+    ) {
+      summary.cancelled += 1
+    }
   }
 
   return (
-    <div className="space-y-4 rounded-lg bg-slate-800 p-4">
-      <div className="flex flex-wrap gap-2">
+    <div className="space-y-4 rounded bg-slate-800 p-4">
+      <div className="flex gap-2">
         <button
           onClick={
             pauseAllUploads
@@ -122,73 +159,75 @@ export function UploadQueue() {
         </button>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex flex-wrap gap-4 text-sm text-slate-300">
+      <div className="space-y-1">
+        <div className="flex justify-between text-sm">
           <span>
+            Overall Progress
+          </span>
+
+          <span>
+            {overallProgress}%
+          </span>
+        </div>
+
+        <div className="h-3 overflow-hidden rounded bg-slate-700">
+          <div
+            className="h-full bg-blue-500 transition-all"
+            style={{
+              width: `${overallProgress}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="rounded bg-slate-900 p-4 text-sm">
+        <div className="font-semibold">
+          Scheduler Metrics
+        </div>
+
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div>
             Pending:
             {' '}
-            {summary.pending}
-          </span>
+            {pendingUploads}
+          </div>
 
-          <span>
-            Uploading:
+          <div>
+            Active:
             {' '}
-            {summary.uploading}
-          </span>
+            {activeUploads}
+          </div>
 
-          <span>
+          <div>
             Paused:
             {' '}
-            {summary.paused}
-          </span>
+            {pausedUploads}
+          </div>
 
-          <span>
-            Completed:
-            {' '}
-            {summary.completed}
-          </span>
-
-          <span>
+          <div>
             Failed:
             {' '}
-            {summary.failed}
-          </span>
-
-          <span>
-            Cancelled:
-            {' '}
-            {summary.cancelled}
-          </span>
-        </div>
-
-        <div className="text-sm text-slate-400">
-          Active uploads:
-          {' '}
-          {activeUploads}
-          {' / '}
-          3
-        </div>
-
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span>
-              Overall Progress
-            </span>
-
-            <span>
-              {overallProgress}%
-            </span>
-          </div>
-
-          <div className="h-3 overflow-hidden rounded bg-slate-700">
-            <div
-              className="h-full bg-blue-500 transition-all"
-              style={{
-                width: `${overallProgress}%`,
-              }}
-            />
+            {failedUploads}
           </div>
         </div>
+      </div>
+
+      <div className="text-sm text-slate-400">
+        Completed:
+        {' '}
+        {summary.completed}
+        {' | '}
+        Failed:
+        {' '}
+        {summary.failed}
+        {' | '}
+        Paused:
+        {' '}
+        {summary.paused}
+        {' | '}
+        Cancelled:
+        {' '}
+        {summary.cancelled}
       </div>
 
       <div className="space-y-3">
@@ -198,89 +237,77 @@ export function UploadQueue() {
               key={item.id}
               className="rounded bg-slate-900 p-3"
             >
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">
                     {
                       item.relativePath
                     }
                   </div>
 
-                  <div className="mt-1 text-xs text-slate-400">
-                    Status:
-                    {' '}
+                  <div className="text-sm text-slate-400">
                     {
                       item.status
                     }
                   </div>
+                </div>
 
-                  {item.error && (
-                    <div className="mt-1 text-xs text-red-400">
+                <select
+                  value={
+                    item.priority
+                  }
+                  onChange={(
+                    e,
+                  ) =>
+                    updateQueueItem(
+                      item.id,
                       {
-                        item.error
-                      }
-                    </div>
-                  )}
-                </div>
+                        priority:
+                          e.target
+                            .value as any,
+                      },
+                    )
+                  }
+                  className="rounded bg-slate-700 px-2 py-1 text-xs"
+                >
+                  <option value="high">
+                    High
+                  </option>
 
-                <div className="text-sm">
-                  {item.progress}
-                  %
-                </div>
+                  <option value="normal">
+                    Normal
+                  </option>
+
+                  <option value="low">
+                    Low
+                  </option>
+                </select>
               </div>
 
-              <div className="mt-2 h-3 overflow-hidden rounded bg-slate-700">
+              <div className="mt-2 h-2 overflow-hidden rounded bg-slate-700">
                 <div
-                  className={`h-full transition-all ${
+                  className={
                     item.status ===
                     'completed'
-                      ? 'bg-green-500'
+                      ? 'h-full bg-green-500'
                       : item.status ===
                             'failed'
-                        ? 'bg-red-500'
+                        ? 'h-full bg-red-500'
                         : item.status ===
-                              'cancelled'
-                          ? 'bg-yellow-500'
+                              'paused'
+                          ? 'h-full bg-yellow-400'
                           : item.status ===
-                                'paused'
-                            ? 'bg-yellow-400'
-                            : 'bg-blue-500'
-                  }`}
+                                'cancelled'
+                            ? 'h-full bg-yellow-500'
+                            : 'h-full bg-blue-500'
+                  }
                   style={{
                     width: `${item.progress}%`,
                   }}
                 />
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.status ===
-                  'failed' && (
-                  <button
-                    onClick={async () => {
-                      if (
-                        !sessionId
-                      ) {
-                        return
-                      }
-
-                      await processSingleUpload(
-                        {
-                          ...item,
-                          status:
-                            'pending',
-                        },
-
-                        sessionId,
-
-                        updateQueueItem,
-                      )
-                    }}
-                    className="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600"
-                  >
-                    Retry
-                  </button>
-                )}
-
+              <div className="mt-2 flex gap-2">
                 {item.status ===
                   'uploading' && (
                   <>
@@ -312,15 +339,15 @@ export function UploadQueue() {
                   'paused' && (
                   <button
                     onClick={async () => {
+                      resumeQueueItem(
+                        item.id,
+                      )
+
                       if (
                         !sessionId
                       ) {
                         return
                       }
-
-                      resumeQueueItem(
-                        item.id,
-                      )
 
                       await processSingleUpload(
                         {
@@ -340,6 +367,12 @@ export function UploadQueue() {
                   </button>
                 )}
               </div>
+
+              {item.error && (
+                <div className="mt-2 text-xs text-red-400">
+                  {item.error}
+                </div>
+              )}
             </div>
           ),
         )}

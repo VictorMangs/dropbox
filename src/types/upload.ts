@@ -11,6 +11,11 @@ export type UploadStatus =
   | 'failed'
   | 'cancelled'
 
+export type UploadPriority =
+  | 'high'
+  | 'normal'
+  | 'low'
+  
 export interface UploadRecord {
   id: string
 
@@ -45,6 +50,12 @@ export interface UploadQueueItem {
   error?: string
 
   abortController?: AbortController
+
+  priority: UploadPriority
+
+  createdAt: string
+
+  retryCount: number
 }
 
 export interface UploadSession {

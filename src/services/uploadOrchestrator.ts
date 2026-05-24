@@ -1,133 +1,88 @@
-import {
-  uploadFile,
-  getSession,
-} from '../api/uploadApi'
+import { uploadFile } from '../api/uploadApi'
 
 import type {
   UploadQueueItem,
 } from '../types/upload'
 
-const MAX_CONCURRENT_UPLOADS = 3
+const MAX_RETRIES = 3
 
-interface ProcessUploadsParams {
-  queue: UploadQueueItem[]
+function getDynamicConcurrency(
+  queueSize: number,
+) {
+  if (queueSize <= 3) {
+    return 1
+  }
 
-  sessionId: string
+  if (queueSize <= 10) {
+    return 3
+  }
 
-  getSchedulerPaused: () => boolean
+  if (queueSize <= 25) {
+    return 4
+  }
 
-  updateQueueItem: (
-    id: string,
-    updates: Partial<UploadQueueItem>,
-  ) => void
-
-  setFiles: (
-    files: any[],
-  ) => void
-
-  getQueueItem: (
-    id: string,
-  ) => UploadQueueItem | undefined
+  return 5
 }
 
-export async function processUploads({
-  queue,
-  sessionId,
-  updateQueueItem,
-  setFiles,
-  getQueueItem,
-  getSchedulerPaused,
-}: ProcessUploadsParams) {
-  const pendingQueue =
-    queue.filter(
-        (item) =>
-        ![
-          'completed',
-          'paused',
-          'cancelled',
-        ].includes(
-          item.status,
-        )
-    )
+function getPriorityWeight(
+  priority: string,
+) {
+  switch (priority) {
+    case 'high':
+      return 3
 
-    let currentIndex = 0
+    case 'normal':
+      return 2
 
-    async function worker() {
-    while (
-        currentIndex <
-        pendingQueue.length
-    ) {
+    case 'low':
+      return 1
 
-        if (
-          getSchedulerPaused()
-        ) {
-          return
-        }
-        
-        const item =
-        pendingQueue[
-            currentIndex
-        ]
+    default:
+      return 0
+  }
+}
 
-        currentIndex += 1
-        
-        const latestItem =
-          getQueueItem(item.id)
+function applyPriorityAging(
+  item: UploadQueueItem,
+) {
+  const ageMs =
+    Date.now() -
+    new Date(
+      item.createdAt,
+    ).getTime()
 
-        if (
-          !latestItem ||
-          [
-            'paused',
-            'cancelled',
-            'completed',
-          ].includes(
-            latestItem.status,
-          )
-        ) {
-          continue
-        }
+  const ageMinutes =
+    ageMs / 1000 / 60
 
-        await processSingleUpload(
-          item,
-          sessionId,
-          updateQueueItem,
-          getQueueItem,
-        )
-    }
-    }
+  if (
+    ageMinutes > 5 &&
+    item.priority === 'low'
+  ) {
+    return 2
+  }
 
-    const workers = Array.from(
-    {
-        length:
-        MAX_CONCURRENT_UPLOADS,
-    },
-    () => worker(),
-    )
+  return getPriorityWeight(
+    item.priority,
+  )
+}
 
-await Promise.all(workers)
-  const hydratedSession =
-    await getSession(sessionId)
-
-  setFiles(
-    hydratedSession.files,
+function delay(ms: number) {
+  return new Promise(
+    (resolve) =>
+      setTimeout(resolve, ms),
   )
 }
 
 export async function processSingleUpload(
   item: UploadQueueItem,
-
   sessionId: string,
-
   updateQueueItem: (
     id: string,
     updates: Partial<UploadQueueItem>,
   ) => void,
-
-  getQueueItem: (
-    id: string,
-  ) => UploadQueueItem | undefined,
 ) {
-  const abortController = new AbortController()
+  const abortController =
+    new AbortController()
 
   updateQueueItem(item.id, {
     status: 'uploading',
@@ -153,54 +108,49 @@ export async function processSingleUpload(
       abortController.signal,
     )
 
-    const latestItem =
-      getQueueItem(item.id)
-
-    if (
-      !latestItem ||
-      latestItem.status ===
-        'cancelled' ||
-      latestItem.status ===
-        'paused'
-    ) {
-      return
-    }
-
     updateQueueItem(item.id, {
       status: 'completed',
       progress: 100,
     })
   } catch (error) {
-    const latestItem =
-  getQueueItem(item.id)
-
-  if (
-    abortController.signal
-      .aborted
-  ) {
     if (
-      latestItem?.status ===
-      'paused'
+      abortController.signal
+        .aborted
     ) {
       updateQueueItem(item.id, {
-        error: 'Upload paused',
-      })
+        status:
+          item.status ===
+          'paused'
+            ? 'paused'
+            : 'cancelled',
 
-      return
-    }
-
-    if (
-      latestItem?.status ===
-      'cancelled'
-    ) {
-      updateQueueItem(item.id, {
         error:
-          'Upload cancelled',
+          item.status ===
+          'paused'
+            ? 'Upload paused'
+            : 'Upload cancelled',
       })
 
       return
     }
-  }
+
+    const retries =
+      item.retryCount + 1
+
+    if (retries <= MAX_RETRIES) {
+      updateQueueItem(item.id, {
+        status: 'pending',
+        retryCount: retries,
+
+        error: `Retrying upload (${retries}/${MAX_RETRIES})`,
+      })
+
+      await delay(
+        retries * 1000,
+      )
+
+      return
+    }
 
     updateQueueItem(item.id, {
       status: 'failed',
@@ -211,4 +161,77 @@ export async function processSingleUpload(
           : 'Upload failed',
     })
   }
+}
+
+export async function processUploads({
+  queue,
+  sessionId,
+  updateQueueItem,
+  setFiles,
+  getQueueItem,
+  getSchedulerPaused,
+}: {
+  queue: UploadQueueItem[]
+  sessionId: string
+  updateQueueItem: (
+    id: string,
+    updates: Partial<UploadQueueItem>,
+  ) => void
+  setFiles: (files: any[]) => void
+  getQueueItem: (id: string) => UploadQueueItem | undefined
+  getSchedulerPaused: () => boolean
+}) {
+  const pendingQueue =
+    queue
+      .filter(
+        (item) =>
+          ![
+            'completed',
+            'paused',
+            'cancelled',
+          ].includes(
+            item.status,
+          ),
+      )
+      .sort(
+        (a, b) =>
+          applyPriorityAging(
+            b,
+          ) -
+          applyPriorityAging(a),
+      )
+
+  let currentIndex = 0
+
+  async function worker() {
+    while (
+      currentIndex <
+      pendingQueue.length
+    ) {
+      const item =
+        pendingQueue[
+          currentIndex
+        ]
+
+      currentIndex += 1
+
+      await processSingleUpload(
+        item,
+        sessionId,
+        updateQueueItem,
+      )
+    }
+  }
+
+  const workers = Array.from(
+    {
+      length:
+        getDynamicConcurrency(
+          pendingQueue.length,
+        ),
+    },
+    () => worker(),
+  )
+
+  await Promise.all(workers)
 }
