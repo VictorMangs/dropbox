@@ -26,3 +26,4 @@ dist-ssr
 migrations
 *.db
 *.sql
+storage

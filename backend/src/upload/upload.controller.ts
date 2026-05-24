@@ -34,6 +34,52 @@ export class UploadController {
     )
     }
 
+  @Post('upload-sessions/:id/chunks')
+  @UseInterceptors(
+    FileInterceptor('chunk'),
+  )
+  async uploadChunk(
+    @Param('id')
+    sessionId: string,
+
+    @UploadedFile()
+    chunk: Express.Multer.File,
+
+    @Body('chunkIndex')
+    chunkIndex: string,
+
+    @Body('totalChunks')
+    totalChunks: string,
+
+    @Body('relativePath')
+    relativePath: string,
+
+    @Body('fileId')
+    fileId: string,
+  ) {
+    return this.uploadService.uploadChunk(
+      {
+        sessionId,
+
+        chunk,
+
+        chunkIndex:
+          Number(
+            chunkIndex,
+          ),
+
+        totalChunks:
+          Number(
+            totalChunks,
+          ),
+
+        relativePath,
+
+        fileId,
+      },
+    )
+  }
+
   @Post('upload-sessions/:id/files')
   @UseInterceptors(
     FileInterceptor('file'),

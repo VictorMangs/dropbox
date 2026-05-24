@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common'
 
 import * as path from 'path'
 
+import * as fs from 'fs'
+
 import { PrismaService } from '../prisma/prisma.service'
 import { StorageService } from '../storage/storage.service'
 
@@ -117,5 +119,133 @@ export class UploadService {
       })
 
     return saved
+  }
+
+  async uploadChunk({
+    sessionId,
+    chunk,
+    chunkIndex,
+    totalChunks,
+    relativePath,
+    fileId,
+  }: {
+    sessionId: string
+
+    chunk: Express.Multer.File
+
+    chunkIndex: number
+
+    totalChunks: number
+
+    relativePath: string
+
+    fileId: string
+  }) {
+    const chunkDir =
+      path.join(
+        process.cwd(),
+        'storage',
+        'chunks',
+        fileId,
+      )
+
+    await fs.promises.mkdir(
+      chunkDir,
+      {
+        recursive: true,
+      },
+    )
+
+    const chunkPath =
+      path.join(
+        chunkDir,
+        `${chunkIndex}.part`,
+      )
+
+    await fs.promises.writeFile(
+      chunkPath,
+      chunk.buffer,
+    )
+
+    const uploadedChunks =
+      await fs.promises.readdir(
+        chunkDir,
+      )
+
+    if (
+      uploadedChunks.length ===
+      totalChunks
+    ) {
+      await this.assembleChunks({
+        chunkDir,
+        relativePath,
+        sessionId,
+        totalChunks,
+      })
+    }
+
+    return {
+      success: true,
+      chunkIndex,
+    }
+  }
+
+  private async assembleChunks({
+    chunkDir,
+    relativePath,
+    sessionId,
+    totalChunks,
+  }: {
+    chunkDir: string
+
+    relativePath: string
+
+    sessionId: string
+
+    totalChunks: number
+  }) {
+    const finalPath =
+      path.join(
+        process.cwd(),
+        'storage',
+        'uploads',
+        sessionId,
+        relativePath,
+      )
+
+    await fs.promises.mkdir(
+      path.dirname(
+        finalPath,
+      ),
+      {
+        recursive: true,
+      },
+    )
+
+    const writeStream =
+      fs.createWriteStream(
+        finalPath,
+      )
+
+    for (
+      let i = 0;
+      i < totalChunks;
+      i++
+    ) {
+      const chunkPath =
+        path.join(
+          chunkDir,
+          `${i}.part`,
+        )
+
+      const data =
+        await fs.promises.readFile(
+          chunkPath,
+        )
+
+      writeStream.write(data)
+    }
+
+    writeStream.end()
   }
 }

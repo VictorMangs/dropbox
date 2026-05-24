@@ -12,6 +12,10 @@ import {
   saveSessionId,
 } from '../utils/sessionStorage'
 
+import {
+  createFileChunks,
+} from '../utils/createFileChunks'
+
 import type {
   UploadQueueItem,
 } from '../types/upload'
@@ -53,10 +57,10 @@ export function Dropzone() {
       (state) =>
         state.updateQueueItem,
     )
-  
+
   const getQueueItem =
     useUploadStore.getState
-  
+
   const getSchedulerPaused =
     () =>
       useUploadStore
@@ -98,6 +102,8 @@ export function Dropzone() {
             createdAt: new Date().toISOString(),
 
             retryCount: 0,
+
+            chunks: createFileChunks(file),
           }),
         )
 
@@ -119,9 +125,9 @@ export function Dropzone() {
               (item) =>
                 item.id === id,
             ),
-        
+
         getSchedulerPaused,
-        
+
       })
     } catch (error) {
       console.error(error)

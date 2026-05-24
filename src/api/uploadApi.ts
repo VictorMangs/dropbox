@@ -83,6 +83,86 @@ export async function uploadFile(
 	}
 }
 
+export async function uploadChunk(
+  sessionId: string,
+
+  fileId: string,
+
+  chunk: Blob,
+
+  chunkIndex: number,
+
+  totalChunks: number,
+
+  relativePath: string,
+
+  onProgress?: (
+    progress: number,
+  ) => void,
+
+  signal?: AbortSignal,
+) {
+  const formData =
+    new FormData()
+
+  formData.append(
+    'chunk',
+    chunk,
+  )
+
+  formData.append(
+    'chunkIndex',
+    chunkIndex.toString(),
+  )
+
+  formData.append(
+    'totalChunks',
+    totalChunks.toString(),
+  )
+
+  formData.append(
+    'relativePath',
+    relativePath,
+  )
+
+  formData.append(
+    'fileId',
+    fileId,
+  )
+
+  const response =
+    await axios.post(
+      `${API_BASE}/upload-sessions/${sessionId}/chunks`,
+      formData,
+      {
+        signal,
+
+        onUploadProgress: (
+          event,
+        ) => {
+          if (
+            !event.total
+          ) {
+            return
+          }
+
+          const progress =
+            Math.round(
+              (event.loaded /
+                event.total) *
+                100,
+            )
+
+          onProgress?.(
+            progress,
+          )
+        },
+      },
+    )
+
+  return response.data
+}
+
 export async function getSession(
   sessionId: string,
 ) {

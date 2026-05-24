@@ -1,4 +1,4 @@
-import { uploadFile } from '../api/uploadApi'
+import { uploadChunk } from '../api/uploadApi'
 
 import type {
   UploadQueueItem,
@@ -91,22 +91,59 @@ export async function processSingleUpload(
   })
 
   try {
-    await uploadFile(
-      sessionId,
-      item.file,
-      item.relativePath,
+    if (!item.chunks) {
+      throw new Error(
+        'Missing chunks',
+      )
+    }
 
-      (progress) => {
-        updateQueueItem(
-          item.id,
-          {
-            progress,
-          },
-        )
-      },
+    for (const chunk of item.chunks) {
+      await uploadChunk(
+        sessionId,
 
-      abortController.signal,
-    )
+        item.id,
+
+        chunk.blob,
+
+        chunk.chunkIndex,
+
+        chunk.totalChunks,
+
+        item.relativePath,
+
+        (progress) => {
+          chunk.progress =
+            progress
+
+          const totalProgress =
+            Math.round(
+              item.chunks!.reduce(
+                (
+                  acc,
+                  current,
+                ) =>
+                  acc +
+                  current.progress,
+                0,
+              ) /
+                item.chunks!.length,
+            )
+
+          updateQueueItem(
+            item.id,
+            {
+              progress:
+                totalProgress,
+            },
+          )
+        },
+
+        abortController.signal,
+      )
+
+      chunk.status =
+        'completed'
+    }
 
     updateQueueItem(item.id, {
       status: 'completed',
