@@ -6,7 +6,51 @@ import { useUploadStore } from './store/uploadStore'
 
 import { buildFileTree } from './utils/buildFileTree'
 
+import { useEffect } from 'react'
+
+import { getSession } from './api/uploadApi'
+
+import { getSessionId, clearSessionId } from './utils/sessionStorage'
+
+import { UploadQueue } from './components/UploadQueue'
+
 function App() {
+
+  useEffect(() => {
+		async function restoreSession() {
+			const storedSessionId =
+				getSessionId()
+
+			if (!storedSessionId) {
+				return
+			}
+
+			try {
+				setLoading(true)
+
+				const session =
+					await getSession(
+						storedSessionId,
+					)
+
+				setSessionId(session.id)
+
+				setFiles(session.files)
+			} catch (error) {
+				console.error(
+					'Failed to restore session',
+					error,
+				)
+
+				clearSessionId()
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		restoreSession()
+	}, [])
+
   const files = useUploadStore(
     (state) => state.files,
   )
@@ -15,12 +59,24 @@ function App() {
     (state) => state.clearFiles,
   )
 
-  const loading =
-  useUploadStore(
+  const loading = useUploadStore(
     (state) => state.loading,
   )
 
   const tree = buildFileTree(files)
+
+  const setFiles = useUploadStore(
+    (state) => state.setFiles,
+    )
+
+  const setSessionId = useUploadStore(
+    (state) =>
+    state.setSessionId,
+  )
+  const setLoading = useUploadStore(
+    (state) =>
+    state.setLoading,
+  )
 
   return (
     <div className="min-h-screen bg-slate-900 p-8 text-white">
@@ -37,6 +93,7 @@ function App() {
         </div>
 
         <Dropzone />
+        <UploadQueue />
 
         {loading && (
           <div className="rounded bg-blue-600 p-4">

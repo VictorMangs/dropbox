@@ -3,6 +3,12 @@ export type ValidationState =
   | 'cyber'
   | 'blocked'
 
+export type UploadStatus =
+  | 'pending'
+  | 'uploading'
+  | 'completed'
+  | 'failed'
+
 export interface UploadRecord {
   id: string
 
@@ -21,6 +27,20 @@ export interface UploadRecord {
   validationMessage: string
 
   createdAt: string
+}
+
+export interface UploadQueueItem {
+  id: string
+
+  file: File
+
+  relativePath: string
+
+  progress: number
+
+  status: UploadStatus
+
+  error?: string
 }
 
 export interface UploadSession {

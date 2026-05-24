@@ -2,17 +2,26 @@ import { useDropzone } from 'react-dropzone'
 
 import { useUploadStore } from '../store/uploadStore'
 
+import { createSession } from '../api/uploadApi'
 
 import {
-  createSession,
-  uploadFile,
-  getSession,
-} from '../api/uploadApi'
+  processUploads,
+} from '../services/uploadOrchestrator'
+
+import {
+  saveSessionId,
+} from '../utils/sessionStorage'
+
+import type {
+  UploadQueueItem,
+} from '../types/upload'
 
 declare module 'react' {
-  interface InputHTMLAttributes<T> extends HTMLAttributes<T> {
-    directory?: string;
-    webkitdirectory?: string;
+  interface InputHTMLAttributes<T>
+    extends HTMLAttributes<T> {
+    directory?: string
+
+    webkitdirectory?: string
   }
 }
 
@@ -25,14 +34,25 @@ export function Dropzone() {
     useUploadStore(
       (state) =>
         state.setSessionId,
-  )
+    )
 
   const setLoading =
     useUploadStore(
       (state) =>
         state.setLoading,
-  )
+    )
 
+  const setUploadQueue =
+    useUploadStore(
+      (state) =>
+        state.setUploadQueue,
+    )
+
+  const updateQueueItem =
+    useUploadStore(
+      (state) =>
+        state.updateQueueItem,
+    )
 
   const onDrop = async (
     acceptedFiles: File[],
@@ -45,24 +65,39 @@ export function Dropzone() {
 
       setSessionId(session.id)
 
-      for (const file of acceptedFiles) {
-        const relativePath =
-          file.webkitRelativePath ||
-          file.name
+      saveSessionId(session.id)
 
-        await uploadFile(
-          session.id,
-          file,
-          relativePath,
+      const queue:
+        UploadQueueItem[] =
+        acceptedFiles.map(
+          (file) => ({
+            id:
+              crypto.randomUUID(),
+
+            file,
+
+            relativePath:
+              file.webkitRelativePath ||
+              file.name,
+
+            progress: 0,
+
+            status: 'pending',
+          }),
         )
-      }
 
-      const hydratedSession =
-        await getSession(session.id)
+      setUploadQueue(queue)
 
-      setFiles(
-        hydratedSession.files,
-      )
+      await processUploads({
+        queue,
+
+        sessionId:
+          session.id,
+
+        updateQueueItem,
+
+        setFiles,
+      })
     } catch (error) {
       console.error(error)
     } finally {
@@ -91,11 +126,14 @@ export function Dropzone() {
       />
 
       {isDragActive ? (
-        <p>Drop files here...</p>
+        <p>
+          Drop files here...
+        </p>
       ) : (
         <div>
           <p className="text-lg font-semibold">
-            Drag and drop folders here
+            Drag and drop folders
+            here
           </p>
 
           <p className="mt-2 text-sm text-slate-400">

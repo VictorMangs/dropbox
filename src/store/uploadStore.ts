@@ -1,13 +1,14 @@
 import { create } from 'zustand'
 
-import type {
-  UploadRecord,
-} from '../types/upload'
+import type { UploadRecord, UploadQueueItem } from '../types/upload'
+import { clearSessionId } from '../utils/sessionStorage'
 
 interface UploadStore {
   sessionId: string | null
 
   files: UploadRecord[]
+
+	uploadQueue: UploadQueueItem[]
 
   loading: boolean
 
@@ -24,6 +25,20 @@ interface UploadStore {
   ) => void
 
   clearFiles: () => void
+
+	setUploadQueue: (
+		queue: UploadQueueItem[],
+	) => void
+
+	updateQueueItem: (
+		id: string,
+		updates: Partial<UploadQueueItem>,
+	) => void
+
+	retryQueueItem: (
+  	id: string,
+	) => void
+
 }
 
 export const useUploadStore =
@@ -31,6 +46,8 @@ export const useUploadStore =
     sessionId: null,
 
     files: [],
+
+		uploadQueue: [],
 
     loading: false,
 
@@ -53,9 +70,56 @@ export const useUploadStore =
         loading,
       })),
 
-    clearFiles: () =>
-      set(() => ({
-        sessionId: null,
-        files: [],
-      })),
+    clearFiles: () => {
+			clearSessionId()
+
+			set(() => ({
+					sessionId: null,
+					files: [],
+			}))
+			},
+
+		setUploadQueue: (
+			uploadQueue,
+		) =>
+			set(() => ({
+				uploadQueue,
+			})),
+
+		updateQueueItem: (
+			id,
+			updates,
+		) =>
+			set((state) => ({
+				uploadQueue:
+					state.uploadQueue.map(
+						(item) =>
+							item.id === id
+								? {
+										...item,
+										...updates,
+									}
+								: item,
+					),
+		})),
+		
+		retryQueueItem: (
+			id,
+		) =>
+			set((state) => ({
+				uploadQueue:
+					state.uploadQueue.map(
+						(item) =>
+							item.id === id
+								? {
+										...item,
+										status:
+											'pending',
+										progress: 0,
+										error: undefined,
+									}
+								: item,
+					),
+			})),
+		
   }))
