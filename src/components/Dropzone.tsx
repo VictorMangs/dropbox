@@ -56,6 +56,12 @@ export function Dropzone() {
   
   const getQueueItem =
     useUploadStore.getState
+  
+  const getSchedulerPaused =
+    () =>
+      useUploadStore
+        .getState()
+        .schedulerPaused
 
   const onDrop = async (
     acceptedFiles: File[],
@@ -107,6 +113,9 @@ export function Dropzone() {
               (item) =>
                 item.id === id,
             ),
+        
+        getSchedulerPaused,
+        
       })
     } catch (error) {
       console.error(error)

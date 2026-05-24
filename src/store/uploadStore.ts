@@ -55,6 +55,12 @@ interface UploadStore {
 
   pauseAllUploads: () => void
 
+  schedulerPaused: boolean
+
+  setSchedulerPaused: (
+    paused: boolean,
+  ) => void
+
 }
 
 export const useUploadStore =
@@ -66,6 +72,8 @@ export const useUploadStore =
 		uploadQueue: [],
 
     loading: false,
+
+    schedulerPaused: false,
 
     setSessionId: (
       sessionId,
@@ -101,6 +109,13 @@ export const useUploadStore =
 			set(() => ({
 				uploadQueue,
 			})),
+    
+    setSchedulerPaused: (
+      schedulerPaused,
+    ) =>
+      set(() => ({
+        schedulerPaused,
+      })),
 
 		updateQueueItem: (
 			id,
@@ -213,6 +228,8 @@ export const useUploadStore =
       id,
     ) =>
       set((state) => ({
+        schedulerPaused: false,
+
         uploadQueue:
           state.uploadQueue.map(
             (item) =>
@@ -241,6 +258,8 @@ export const useUploadStore =
         )
 
         return {
+          schedulerPaused: true,
+
           uploadQueue:
             state.uploadQueue.map(
               (item) =>

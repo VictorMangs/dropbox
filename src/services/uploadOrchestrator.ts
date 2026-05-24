@@ -14,6 +14,8 @@ interface ProcessUploadsParams {
 
   sessionId: string
 
+  getSchedulerPaused: () => boolean
+
   updateQueueItem: (
     id: string,
     updates: Partial<UploadQueueItem>,
@@ -34,6 +36,7 @@ export async function processUploads({
   updateQueueItem,
   setFiles,
   getQueueItem,
+  getSchedulerPaused,
 }: ProcessUploadsParams) {
   const pendingQueue =
     queue.filter(
@@ -54,6 +57,13 @@ export async function processUploads({
         currentIndex <
         pendingQueue.length
     ) {
+
+        if (
+          getSchedulerPaused()
+        ) {
+          return
+        }
+        
         const item =
         pendingQueue[
             currentIndex
