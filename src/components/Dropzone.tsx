@@ -53,6 +53,9 @@ export function Dropzone() {
       (state) =>
         state.updateQueueItem,
     )
+  
+  const getQueueItem =
+    useUploadStore.getState
 
   const onDrop = async (
     acceptedFiles: File[],
@@ -97,6 +100,13 @@ export function Dropzone() {
         updateQueueItem,
 
         setFiles,
+
+        getQueueItem: (id) =>
+          getQueueItem()
+            .uploadQueue.find(
+              (item) =>
+                item.id === id,
+            ),
       })
     } catch (error) {
       console.error(error)

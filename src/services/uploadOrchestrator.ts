@@ -22,6 +22,10 @@ interface ProcessUploadsParams {
   setFiles: (
     files: any[],
   ) => void
+
+  getQueueItem: (
+    id: string,
+  ) => UploadQueueItem | undefined
 }
 
 export async function processUploads({
@@ -29,6 +33,7 @@ export async function processUploads({
   sessionId,
   updateQueueItem,
   setFiles,
+  getQueueItem,
 }: ProcessUploadsParams) {
   const pendingQueue =
     queue.filter(
@@ -55,11 +60,28 @@ export async function processUploads({
         ]
 
         currentIndex += 1
+        
+        const latestItem =
+          getQueueItem(item.id)
+
+        if (
+          !latestItem ||
+          [
+            'paused',
+            'cancelled',
+            'completed',
+          ].includes(
+            latestItem.status,
+          )
+        ) {
+          continue
+        }
 
         await processSingleUpload(
-        item,
-        sessionId,
-        updateQueueItem,
+          item,
+          sessionId,
+          updateQueueItem,
+          getQueueItem,
         )
     }
     }
@@ -90,6 +112,10 @@ export async function processSingleUpload(
     id: string,
     updates: Partial<UploadQueueItem>,
   ) => void,
+
+  getQueueItem: (
+    id: string,
+  ) => UploadQueueItem | undefined,
 ) {
   const abortController = new AbortController()
 
@@ -117,22 +143,54 @@ export async function processSingleUpload(
       abortController.signal,
     )
 
+    const latestItem =
+      getQueueItem(item.id)
+
+    if (
+      !latestItem ||
+      latestItem.status ===
+        'cancelled' ||
+      latestItem.status ===
+        'paused'
+    ) {
+      return
+    }
+
     updateQueueItem(item.id, {
       status: 'completed',
       progress: 100,
     })
   } catch (error) {
+    const latestItem =
+  getQueueItem(item.id)
+
+  if (
+    abortController.signal
+      .aborted
+  ) {
     if (
-      abortController.signal
-        .aborted
+      latestItem?.status ===
+      'paused'
     ) {
       updateQueueItem(item.id, {
-        status: 'cancelled',
-        error: 'Upload cancelled',
+        error: 'Upload paused',
       })
 
       return
     }
+
+    if (
+      latestItem?.status ===
+      'cancelled'
+    ) {
+      updateQueueItem(item.id, {
+        error:
+          'Upload cancelled',
+      })
+
+      return
+    }
+  }
 
     updateQueueItem(item.id, {
       status: 'failed',
