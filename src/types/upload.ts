@@ -8,6 +8,7 @@ export type UploadStatus =
   | 'uploading'
   | 'completed'
   | 'failed'
+  | 'cancelled'
 
 export interface UploadRecord {
   id: string
@@ -41,6 +42,8 @@ export interface UploadQueueItem {
   status: UploadStatus
 
   error?: string
+
+  abortController?: AbortController
 }
 
 export interface UploadSession {

@@ -38,6 +38,12 @@ interface UploadStore {
 	retryQueueItem: (
   	id: string,
 	) => void
+  
+  cancelQueueItem: (
+    id: string,
+  ) => void
+
+  cancelAllUploads: () => void
 
 }
 
@@ -121,5 +127,53 @@ export const useUploadStore =
 								: item,
 					),
 			})),
-		
+      
+    cancelQueueItem: (
+  id,
+) =>
+  set((state) => ({
+    uploadQueue:
+      state.uploadQueue.map(
+        (item) => {
+          if (
+            item.id !== id
+          ) {
+            return item
+          }
+
+          item.abortController?.abort()
+
+          return {
+            ...item,
+            status:
+              'cancelled',
+          }
+        },
+      ),
+  })),
+
+  cancelAllUploads: () =>
+    set((state) => {
+      state.uploadQueue.forEach(
+        (item) => {
+          item.abortController?.abort()
+        },
+      )
+
+      return {
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) =>
+              item.status ===
+              'completed'
+                ? item
+                : {
+                    ...item,
+                    status:
+                      'cancelled',
+                  },
+          ),
+      }
+    }),
+
   }))

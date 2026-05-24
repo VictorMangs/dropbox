@@ -27,6 +27,8 @@ export async function uploadFile(
   onProgress?: (
     progress: number,
   ) => void,
+
+  signal?: AbortSignal,
 ) {
   const formData = new FormData()
 
@@ -43,6 +45,7 @@ export async function uploadFile(
 				`${API_BASE}/upload-sessions/${sessionId}/files`,
 				formData,
 				{
+          signal,
 					onUploadProgress: (
 						progressEvent,
 					) => {

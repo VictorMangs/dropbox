@@ -86,9 +86,12 @@ export async function processSingleUpload(
     updates: Partial<UploadQueueItem>,
   ) => void,
 ) {
+  const abortController = new AbortController()
+
   updateQueueItem(item.id, {
     status: 'uploading',
     error: undefined,
+    abortController,
   })
 
   try {
@@ -105,6 +108,8 @@ export async function processSingleUpload(
           },
         )
       },
+
+      abortController.signal,
     )
 
     updateQueueItem(item.id, {
@@ -112,6 +117,18 @@ export async function processSingleUpload(
       progress: 100,
     })
   } catch (error) {
+    if (
+      abortController.signal
+        .aborted
+    ) {
+      updateQueueItem(item.id, {
+        status: 'cancelled',
+        error: 'Upload cancelled',
+      })
+
+      return
+    }
+
     updateQueueItem(item.id, {
       status: 'failed',
 
