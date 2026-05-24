@@ -12,10 +12,6 @@ import {
   saveSessionId,
 } from '../utils/sessionStorage'
 
-import {
-  createFileChunks,
-} from '../utils/createFileChunks'
-
 import type {
   UploadQueueItem,
 } from '../types/upload'
@@ -102,8 +98,6 @@ export function Dropzone() {
             createdAt: new Date().toISOString(),
 
             retryCount: 0,
-
-            chunks: createFileChunks(file),
           }),
         )
 

@@ -307,18 +307,6 @@ export function UploadQueue() {
                 />
               </div>
 
-              <div className="mt-2 text-xs text-slate-400">
-                Chunks:
-                {' '}
-                {item.chunks?.filter(
-                  (chunk) =>
-                    chunk.status ===
-                    'completed',
-                ).length ?? 0}
-                {' / '}
-                {item.chunks?.length ?? 0}
-              </div>
-
               <div className="mt-2 flex gap-2">
                 {item.status ===
                   'uploading' && (
