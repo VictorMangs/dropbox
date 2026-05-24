@@ -48,6 +48,32 @@ export function UploadQueue() {
     summary[item.status] += 1
   }
 
+  const totalFiles =
+    uploadQueue.length
+
+  const completedFiles =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'completed',
+    ).length
+
+  const overallProgress =
+    totalFiles === 0
+      ? 0
+      : Math.round(
+          (completedFiles /
+            totalFiles) *
+            100,
+        )
+
+  const activeUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'uploading',
+    ).length
+
   const allCompleted =
     uploadQueue.length > 0 &&
     uploadQueue.every(
@@ -64,35 +90,45 @@ export function UploadQueue() {
     )
 
   return (
-    <div className="space-y-2 rounded bg-slate-800 p-4">
-      <h2 className="text-lg font-semibold">
-        Upload Progress
-      </h2>
+    <div className="space-y-4 rounded bg-slate-800 p-4">
+      <div>
+        <h2 className="text-lg font-semibold">
+          Upload Progress
+        </h2>
 
-      <div className="mt-2 flex gap-4 text-sm text-slate-400">
-        <span>
-          Pending:
-          {' '}
-          {summary.pending}
-        </span>
+        <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-400">
+          <span>
+            Pending:
+            {' '}
+            {summary.pending}
+          </span>
 
-        <span>
-          Uploading:
-          {' '}
-          {summary.uploading}
-        </span>
+          <span>
+            Uploading:
+            {' '}
+            {summary.uploading}
+          </span>
 
-        <span>
-          Completed:
-          {' '}
-          {summary.completed}
-        </span>
+          <span>
+            Completed:
+            {' '}
+            {summary.completed}
+          </span>
 
-        <span>
-          Failed:
+          <span>
+            Failed:
+            {' '}
+            {summary.failed}
+          </span>
+        </div>
+
+        <div className="mt-2 text-sm text-slate-400">
+          Active uploads:
           {' '}
-          {summary.failed}
-        </span>
+          {activeUploads}
+          {' / '}
+          3
+        </div>
       </div>
 
       {allCompleted && (
@@ -108,93 +144,118 @@ export function UploadQueue() {
         </div>
       )}
 
-      {uploadQueue.map(
-        (item) => (
+      <div className="space-y-1">
+        <div className="flex justify-between text-sm">
+          <span>
+            Overall Progress
+          </span>
+
+          <span>
+            {overallProgress}%
+          </span>
+        </div>
+
+        <div className="h-3 overflow-hidden rounded bg-slate-700">
           <div
-            key={item.id}
-            className="space-y-1"
-          >
-            <div className="flex justify-between text-sm">
-              <span>
-                {item.relativePath}
-              </span>
+            className="h-full bg-blue-500 transition-all"
+            style={{
+              width: `${overallProgress}%`,
+            }}
+          />
+        </div>
+      </div>
 
-              <span>
-                {item.progress}%
-              </span>
-            </div>
+      <div className="space-y-3">
+        {uploadQueue.map(
+          (item) => (
+            <div
+              key={item.id}
+              className="space-y-1 rounded bg-slate-900 p-3"
+            >
+              <div className="flex justify-between text-sm">
+                <span className="break-all">
+                  {item.relativePath}
+                </span>
 
-            <div className="h-2 overflow-hidden rounded bg-slate-700">
-              <div
-                className={`h-full transition-all ${
-                  item.status ===
-                  'failed'
-                    ? 'bg-red-500'
-                    : item.status ===
-                        'completed'
-                      ? 'bg-green-500'
-                      : 'bg-blue-500'
-                }`}
-                style={{
-                  width: `${item.progress}%`,
-                }}
-              />
-            </div>
+                <span>
+                  {item.progress}%
+                </span>
+              </div>
 
-            <div className="text-xs text-slate-400">
-              {item.status}
+              <div className="h-2 overflow-hidden rounded bg-slate-700">
+                <div
+                  className={`h-full transition-all ${
+                    item.status ===
+                    'failed'
+                      ? 'bg-red-500'
+                      : item.status ===
+                          'completed'
+                        ? 'bg-green-500'
+                        : 'bg-blue-500'
+                  }`}
+                  style={{
+                    width: `${item.progress}%`,
+                  }}
+                />
+              </div>
 
-              {item.error &&
-                ` - ${item.error}`}
-            </div>
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-slate-400">
+                  {item.status}
 
-            {item.status ===
-              'failed' && (
-              <button
-                onClick={async () => {
-                  retryQueueItem(
-                    item.id,
-                  )
+                  {item.error &&
+                    ` - ${item.error}`}
+                </div>
 
-                  const updated =
-                    uploadQueue.find(
-                      (
-                        queueItem,
-                      ) =>
-                        queueItem.id ===
+                {item.status ===
+                  'failed' && (
+                  <button
+                    onClick={async () => {
+                      retryQueueItem(
                         item.id,
-                    )
+                      )
 
-                  if (
-                    !updated ||
-                    !sessionId
-                  ) {
-                    return
-                  }
+                      const updated =
+                        uploadQueue.find(
+                          (
+                            queueItem,
+                          ) =>
+                            queueItem.id ===
+                            item.id,
+                        )
 
-                  await processSingleUpload(
-                    {
-                      ...updated,
-                      status:
-                        'pending',
-                      progress: 0,
-                      error:
-                        undefined,
-                    },
+                      if (
+                        !updated ||
+                        !sessionId
+                      ) {
+                        return
+                      }
 
-                    sessionId,
+                      await processSingleUpload(
+                        {
+                          ...updated,
+                          status:
+                            'pending',
+                          progress: 0,
+                          error:
+                            undefined,
+                        },
 
-                    updateQueueItem,
-                  )
-                }}
-                className="mt-1 rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
-              >
-                Retry
-              </button>
-            )}
-          </div>
-        ),
-      )}
+                        sessionId,
+
+                        updateQueueItem,
+                      )
+                    }}
+                    className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
+                  >
+                    Retry
+                  </button>
+                )}
+              </div>
+            </div>
+          ),
+        )}
+      </div>
     </div>
   )
 }

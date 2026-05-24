@@ -7,6 +7,8 @@ import type {
   UploadQueueItem,
 } from '../types/upload'
 
+const MAX_CONCURRENT_UPLOADS = 3
+
 interface ProcessUploadsParams {
   queue: UploadQueueItem[]
 
@@ -28,21 +30,44 @@ export async function processUploads({
   updateQueueItem,
   setFiles,
 }: ProcessUploadsParams) {
-  for (const item of queue) {
-    if (
-      item.status ===
-      'completed'
+  const pendingQueue =
+    queue.filter(
+        (item) =>
+        item.status !==
+        'completed',
+    )
+
+    let currentIndex = 0
+
+    async function worker() {
+    while (
+        currentIndex <
+        pendingQueue.length
     ) {
-      continue
+        const item =
+        pendingQueue[
+            currentIndex
+        ]
+
+        currentIndex += 1
+
+        await processSingleUpload(
+        item,
+        sessionId,
+        updateQueueItem,
+        )
+    }
     }
 
-    await processSingleUpload(
-      item,
-      sessionId,
-      updateQueueItem,
+    const workers = Array.from(
+    {
+        length:
+        MAX_CONCURRENT_UPLOADS,
+    },
+    () => worker(),
     )
-  }
 
+await Promise.all(workers)
   const hydratedSession =
     await getSession(sessionId)
 
