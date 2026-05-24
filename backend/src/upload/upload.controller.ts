@@ -34,29 +34,49 @@ export class UploadController {
     )
     }
 
-  @Post('upload-sessions/:id/files')
+  @Post('upload-sessions/:id/chunks')
   @UseInterceptors(
-    FileInterceptor('file'),
+    FileInterceptor('chunk'),
   )
-  async uploadFile(
-    @Param('id') sessionId: string,
+  async uploadChunk(
+    @Param('id')
+    sessionId: string,
 
     @UploadedFile()
-    file: Express.Multer.File,
+    chunk: Express.Multer.File,
+
+    @Body('chunkIndex')
+    chunkIndex: string,
+
+    @Body('totalChunks')
+    totalChunks: string,
 
     @Body('relativePath')
     relativePath: string,
-    ) {
-    if (!file) {
-        throw new BadRequestException(
-        'No file uploaded. Ensure multipart/form-data is correct.',
-        )
-    }
 
-    return this.uploadService.uploadFile(
+    @Body('fileId')
+    fileId: string,
+  ) {
+    return this.uploadService.uploadChunk(
+      {
         sessionId,
-        file,
+
+        chunk,
+
+        chunkIndex:
+          Number(
+            chunkIndex,
+          ),
+
+        totalChunks:
+          Number(
+            totalChunks,
+          ),
+
         relativePath,
+
+        fileId,
+      },
     )
-    }
-}
+  }
+

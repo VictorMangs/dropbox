@@ -15,6 +15,28 @@ export type UploadPriority =
   | 'high'
   | 'normal'
   | 'low'
+
+export interface UploadChunk {
+  id: string
+
+  chunkIndex: number
+
+  totalChunks: number
+
+  startByte: number
+
+  endByte: number
+
+  blob: Blob
+
+  progress: number
+
+  status:
+    | 'pending'
+    | 'uploading'
+    | 'completed'
+    | 'failed'
+}
   
 export interface UploadRecord {
   id: string
@@ -56,6 +78,8 @@ export interface UploadQueueItem {
   createdAt: string
 
   retryCount: number
+
+  chunks?: UploadChunk[]
 }
 
 export interface UploadSession {
