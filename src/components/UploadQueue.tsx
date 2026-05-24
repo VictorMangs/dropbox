@@ -13,10 +13,10 @@ export function UploadQueue() {
         state.uploadQueue,
     )
 
-  const retryQueueItem =
+  const sessionId =
     useUploadStore(
       (state) =>
-        state.retryQueueItem,
+        state.sessionId,
     )
 
   const updateQueueItem =
@@ -37,29 +37,23 @@ export function UploadQueue() {
         state.cancelAllUploads,
     )
 
-  const sessionId =
+  const pauseQueueItem =
     useUploadStore(
       (state) =>
-        state.sessionId,
+        state.pauseQueueItem,
     )
 
-  if (
-    uploadQueue.length === 0
-  ) {
-    return null
-  }
+  const resumeQueueItem =
+    useUploadStore(
+      (state) =>
+        state.resumeQueueItem,
+    )
 
-  const summary = {
-    pending: 0,
-    uploading: 0,
-    completed: 0,
-    failed: 0,
-    cancelled: 0,
-  }
-
-  for (const item of uploadQueue) {
-    summary[item.status] += 1
-  }
+  const pauseAllUploads =
+    useUploadStore(
+      (state) =>
+        state.pauseAllUploads,
+    )
 
   const totalFiles =
     uploadQueue.length
@@ -87,69 +81,36 @@ export function UploadQueue() {
         'uploading',
     ).length
 
-  const allCompleted =
-    uploadQueue.length > 0 &&
-    uploadQueue.every(
-      (item) =>
-        item.status ===
-        'completed',
-    )
+  const summary = {
+    pending: 0,
+    uploading: 0,
+    paused: 0,
+    completed: 0,
+    failed: 0,
+    cancelled: 0,
+  }
 
-  const hasFailures =
-    uploadQueue.some(
-      (item) =>
-        item.status ===
-        'failed',
-    )
+  for (const item of uploadQueue) {
+    summary[item.status] += 1
+  }
+
+  if (
+    uploadQueue.length === 0
+  ) {
+    return null
+  }
 
   return (
-    <div className="space-y-4 rounded bg-slate-800 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Upload Progress
-          </h2>
-
-          <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-400">
-            <span>
-              Pending:
-              {' '}
-              {summary.pending}
-            </span>
-
-            <span>
-              Uploading:
-              {' '}
-              {summary.uploading}
-            </span>
-
-            <span>
-              Completed:
-              {' '}
-              {summary.completed}
-            </span>
-
-            <span>
-              Failed:
-              {' '}
-              {summary.failed}
-            </span>
-
-            <span>
-              Cancelled:
-              {' '}
-              {summary.cancelled}
-            </span>
-          </div>
-
-          <div className="mt-2 text-sm text-slate-400">
-            Active uploads:
-            {' '}
-            {activeUploads}
-            {' / '}
-            3
-          </div>
-        </div>
+    <div className="space-y-4 rounded-lg bg-slate-800 p-4">
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={
+            pauseAllUploads
+          }
+          className="rounded bg-yellow-700 px-3 py-2 text-sm hover:bg-yellow-600"
+        >
+          Pause All Uploads
+        </button>
 
         <button
           onClick={
@@ -161,146 +122,228 @@ export function UploadQueue() {
         </button>
       </div>
 
-      {allCompleted && (
-        <div className="rounded bg-green-700 p-3 text-sm">
-          All uploads completed successfully.
-        </div>
-      )}
-
-      {hasFailures && (
-        <div className="rounded bg-red-700 p-3 text-sm">
-          Some uploads failed.
-          Retry available.
-        </div>
-      )}
-
-      <div className="space-y-1">
-        <div className="flex justify-between text-sm">
+      <div className="space-y-2">
+        <div className="flex flex-wrap gap-4 text-sm text-slate-300">
           <span>
-            Overall Progress
+            Pending:
+            {' '}
+            {summary.pending}
           </span>
 
           <span>
-            {overallProgress}%
+            Uploading:
+            {' '}
+            {summary.uploading}
+          </span>
+
+          <span>
+            Paused:
+            {' '}
+            {summary.paused}
+          </span>
+
+          <span>
+            Completed:
+            {' '}
+            {summary.completed}
+          </span>
+
+          <span>
+            Failed:
+            {' '}
+            {summary.failed}
+          </span>
+
+          <span>
+            Cancelled:
+            {' '}
+            {summary.cancelled}
           </span>
         </div>
 
-        <div className="h-3 overflow-hidden rounded bg-slate-700">
-          <div
-            className="h-full bg-blue-500 transition-all"
-            style={{
-              width: `${overallProgress}%`,
-            }}
-          />
+        <div className="text-sm text-slate-400">
+          Active uploads:
+          {' '}
+          {activeUploads}
+          {' / '}
+          3
+        </div>
+
+        <div className="space-y-1">
+          <div className="flex justify-between text-sm">
+            <span>
+              Overall Progress
+            </span>
+
+            <span>
+              {overallProgress}%
+            </span>
+          </div>
+
+          <div className="h-3 overflow-hidden rounded bg-slate-700">
+            <div
+              className="h-full bg-blue-500 transition-all"
+              style={{
+                width: `${overallProgress}%`,
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {uploadQueue.map(
-        (item) => (
-          <div
-            key={item.id}
-            className="space-y-1 rounded bg-slate-900 p-3"
-          >
-            <div className="flex justify-between text-sm">
-              <span className="break-all">
-                {item.relativePath}
-              </span>
+      <div className="space-y-3">
+        {uploadQueue.map(
+          (item) => (
+            <div
+              key={item.id}
+              className="rounded bg-slate-900 p-3"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">
+                    {
+                      item.relativePath
+                    }
+                  </div>
 
-              <span>
-                {item.progress}%
-              </span>
-            </div>
+                  <div className="mt-1 text-xs text-slate-400">
+                    Status:
+                    {' '}
+                    {
+                      item.status
+                    }
+                  </div>
 
-            <div className="h-2 overflow-hidden rounded bg-slate-700">
-              <div
-                className={`h-full transition-all ${
-                  item.status ===
-                  'cancelled'
-                    ? 'bg-yellow-500'
-                    : item.status ===
-                        'failed'
-                      ? 'bg-red-500'
-                      : item.status ===
-                          'completed'
-                        ? 'bg-green-500'
-                        : 'bg-blue-500'
-                }`}
-                style={{
-                  width: `${item.progress}%`,
-                }}
-              />
-            </div>
+                  {item.error && (
+                    <div className="mt-1 text-xs text-red-400">
+                      {
+                        item.error
+                      }
+                    </div>
+                  )}
+                </div>
 
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-slate-400">
-                {item.status}
-
-                {item.error &&
-                  ` - ${item.error}`}
+                <div className="text-sm">
+                  {item.progress}
+                  %
+                </div>
               </div>
 
-              {item.status ===
-                'failed' && (
-                <button
-                  onClick={async () => {
-                    retryQueueItem(
-                      item.id,
-                    )
+              <div className="mt-2 h-3 overflow-hidden rounded bg-slate-700">
+                <div
+                  className={`h-full transition-all ${
+                    item.status ===
+                    'completed'
+                      ? 'bg-green-500'
+                      : item.status ===
+                            'failed'
+                        ? 'bg-red-500'
+                        : item.status ===
+                              'cancelled'
+                          ? 'bg-yellow-500'
+                          : item.status ===
+                                'paused'
+                            ? 'bg-yellow-400'
+                            : 'bg-blue-500'
+                  }`}
+                  style={{
+                    width: `${item.progress}%`,
+                  }}
+                />
+              </div>
 
-                    const updated =
-                      uploadQueue.find(
-                        (
-                          queueItem,
-                        ) =>
-                          queueItem.id ===
+              <div className="mt-3 flex flex-wrap gap-2">
+                {item.status ===
+                  'failed' && (
+                  <button
+                    onClick={async () => {
+                      if (
+                        !sessionId
+                      ) {
+                        return
+                      }
+
+                      await processSingleUpload(
+                        {
+                          ...item,
+                          status:
+                            'pending',
+                        },
+
+                        sessionId,
+
+                        updateQueueItem,
+                      )
+                    }}
+                    className="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600"
+                  >
+                    Retry
+                  </button>
+                )}
+
+                {item.status ===
+                  'uploading' && (
+                  <>
+                    <button
+                      onClick={() =>
+                        pauseQueueItem(
                           item.id,
+                        )
+                      }
+                      className="rounded bg-yellow-700 px-2 py-1 text-xs hover:bg-yellow-600"
+                    >
+                      Pause
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        cancelQueueItem(
+                          item.id,
+                        )
+                      }
+                      className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+
+                {item.status ===
+                  'paused' && (
+                  <button
+                    onClick={async () => {
+                      if (
+                        !sessionId
+                      ) {
+                        return
+                      }
+
+                      resumeQueueItem(
+                        item.id,
                       )
 
-                    if (
-                      !updated ||
-                      !sessionId
-                    ) {
-                      return
-                    }
+                      await processSingleUpload(
+                        {
+                          ...item,
+                          status:
+                            'pending',
+                        },
 
-                    await processSingleUpload(
-                      {
-                        ...updated,
-                        status:
-                          'pending',
-                        progress: 0,
-                        error:
-                          undefined,
-                      },
+                        sessionId,
 
-                      sessionId,
-
-                      updateQueueItem,
-                    )
-                  }}
-                  className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
-                >
-                  Retry
-                </button>
-              )}
-
-              {item.status ===
-                'uploading' && (
-                <button
-                  onClick={() =>
-                    cancelQueueItem(
-                      item.id,
-                    )
-                  }
-                  className="rounded bg-yellow-700 px-2 py-1 text-xs hover:bg-yellow-600"
-                >
-                  Cancel
-                </button>
-              )}
+                        updateQueueItem,
+                      )
+                    }}
+                    className="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600"
+                  >
+                    Resume
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ),
-      )}
+          ),
+        )}
+      </div>
     </div>
   )
 }

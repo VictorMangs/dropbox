@@ -33,8 +33,13 @@ export async function processUploads({
   const pendingQueue =
     queue.filter(
         (item) =>
-        item.status !==
-        'completed',
+        ![
+          'completed',
+          'paused',
+          'cancelled',
+        ].includes(
+          item.status,
+        )
     )
 
     let currentIndex = 0

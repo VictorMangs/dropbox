@@ -45,6 +45,16 @@ interface UploadStore {
 
   cancelAllUploads: () => void
 
+  pauseQueueItem: (
+    id: string,
+  ) => void
+
+  resumeQueueItem: (
+    id: string,
+  ) => void
+
+  pauseAllUploads: () => void
+
 }
 
 export const useUploadStore =
@@ -176,4 +186,74 @@ export const useUploadStore =
       }
     }),
 
+    pauseQueueItem: (
+      id,
+    ) =>
+      set((state) => ({
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) => {
+              if (
+                item.id !== id
+              ) {
+                return item
+              }
+
+              item.abortController?.abort()
+
+              return {
+                ...item,
+                status: 'paused',
+              }
+            },
+          ),
+      })),
+    
+    resumeQueueItem: (
+      id,
+    ) =>
+      set((state) => ({
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    status:
+                      'pending',
+                    error: undefined,
+                  }
+                : item,
+          ),
+      })),
+
+    pauseAllUploads: () =>
+      set((state) => {
+        state.uploadQueue.forEach(
+          (item) => {
+            if (
+              item.status ===
+              'uploading'
+            ) {
+              item.abortController?.abort()
+            }
+          },
+        )
+
+        return {
+          uploadQueue:
+            state.uploadQueue.map(
+              (item) =>
+                item.status ===
+                'uploading'
+                  ? {
+                      ...item,
+                      status:
+                        'paused',
+                    }
+                  : item,
+            ),
+        }
+      }),
+    
   }))
