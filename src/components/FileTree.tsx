@@ -6,6 +6,7 @@ interface Props {
   tree: TreeNode[]
 }
 
+
 export function FileTree({ tree }: Props) {
   if (!tree.length) {
     return (

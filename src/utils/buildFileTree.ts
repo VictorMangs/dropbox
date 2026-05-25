@@ -49,17 +49,33 @@ export function buildFileTree(
       if (!existing) {
         existing = {
           name: part,
+
           path: currentPath,
-          type: isFile ? 'file' : 'folder',
-          children: isFile ? undefined : [],
+
+          type: isFile
+            ? 'file'
+            : 'folder',
+
+          children: isFile
+            ? undefined
+            : [],
         }
 
         currentLevel.push(existing)
       }
 
       if (isFile) {
-        existing.validation =
-          uploadFile.validationState
+       existing.validation =
+        uploadFile.validationState
+
+        existing.validationMessage =
+          uploadFile.validationMessage
+
+        existing.extension =
+          uploadFile.extension
+
+        existing.size =
+          uploadFile.size
       }
 
       if (!isFile && existing.children) {
@@ -76,19 +92,96 @@ export function buildFileTree(
 function propagateFolderValidation(
   nodes: TreeNode[],
 ): ValidationState {
-  let worst: ValidationState = 'allowed'
+  let worst: ValidationState =
+    'allowed'
+
+  let blockedCount = 0
+
+  let cyberCount = 0
+
+  let allowedCount = 0
+
+  let totalFiles = 0
 
   for (const node of nodes) {
-    if (node.type === 'folder' && node.children) {
+    if (
+      node.type === 'folder' &&
+      node.children
+    ) {
       node.validation =
-        propagateFolderValidation(node.children)
+        propagateFolderValidation(
+          node.children,
+        )
     }
 
-    if (node.validation) {
-      worst = getWorstValidation(
-        worst,
-        node.validation,
-      )
+    if (
+      node.type === 'file'
+    ) {
+      totalFiles += 1
+
+      switch (
+        node.validation
+      ) {
+        case 'blocked':
+          blockedCount += 1
+          break
+
+        case 'cyber':
+          cyberCount += 1
+          break
+
+        case 'allowed':
+          allowedCount += 1
+          break
+      }
+    }
+
+    if (
+      node.children
+    ) {
+      blockedCount +=
+        node.blockedCount ??
+        0
+
+      cyberCount +=
+        node.cyberCount ??
+        0
+
+      allowedCount +=
+        node.allowedCount ??
+        0
+
+      totalFiles +=
+        node.fileCount ??
+        0
+    }
+
+    if (
+      node.validation
+    ) {
+      worst =
+        getWorstValidation(
+          worst,
+          node.validation,
+        )
+    }
+  }
+
+  for (const node of nodes) {
+    if (
+      node.type === 'folder'
+    ) {
+      node.blockedCount =
+        blockedCount
+
+      node.cyberCount =
+        cyberCount
+
+      node.allowedCount =
+        allowedCount
+
+      node.fileCount =
+        totalFiles
     }
   }
 

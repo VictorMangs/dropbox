@@ -33,7 +33,11 @@ export interface UploadRecord {
 
   validationMessage: string
 
+  messageId: number
+
   createdAt: string
+
+  size: number
 }
 
 export interface UploadQueueItem {
@@ -74,6 +78,20 @@ export interface TreeNode {
   type: 'file' | 'folder'
 
   validation?: ValidationState
+
+  validationMessage?: string
+
+  extension?: string
+
+  size?: number
+
+  blockedCount?: number
+
+  cyberCount?: number
+
+  allowedCount?: number
+
+  fileCount?: number
 
   children?: TreeNode[]
 }

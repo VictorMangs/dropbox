@@ -7,6 +7,8 @@ import { StorageService } from '../storage/storage.service'
 
 import { ValidationService } from './validation.service'
 
+import { MessagesService } from '../messages/messages.service'
+
 import {
   NotFoundException,
 } from '@nestjs/common'
@@ -19,6 +21,7 @@ export class UploadService {
     private prisma: PrismaService,
     private storageService: StorageService,
     private validationService: ValidationService,
+    private messagesService: MessagesService,
   ) {}
 
   async createSession() {
@@ -86,6 +89,11 @@ export class UploadService {
       this.validationService.validateExtension(
         extension,
       )
+    
+    const message =
+      this.messagesService.getMessage(
+        validation.messageId,
+      )
 
     const storedPath =
       await this.storageService.saveFile(
@@ -112,7 +120,7 @@ export class UploadService {
             validation.state,
 
           validationMessage:
-            validation.message,
+            message?.message || 'Unknown message',
         },
       })
 

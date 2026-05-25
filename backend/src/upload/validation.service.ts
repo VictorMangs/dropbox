@@ -62,7 +62,7 @@ export class ValidationService implements OnModuleInit {
     if (this.allowedExtensions.has(normalizedExt)) {
       return {
         state: 'allowed',
-        message: 'Approved',
+        messageId: 50,
       }
     }
 
@@ -70,14 +70,14 @@ export class ValidationService implements OnModuleInit {
     if (this.cyberExtensions.has(normalizedExt)) {
       return {
         state: 'cyber',
-        message: 'Cyber routing required',
+        messageId: 70,
       }
     }
 
     // 3. Everything else is blocked (White-list approach)
     return {
       state: 'blocked',
-      message: 'Blocked extension',
+      messageId: 0,
     }
   }
 }

@@ -1,0 +1,9 @@
+ID,Type,Action,Message
+0,Error,Fail,This file extension is not allowed and will fail to transfer
+10,Error,Fail,This file type is not allowed
+20,Warning,Continue,Office document cannot contain macros
+30,Warning,Continue,Additional check for this file type are done and cannot contain executable code such as javascript
+40,Warning,Continue,Imbedded objects in powerpoints are problematic
+50,Info,Continue,This file type is allowed
+60,Warning,Continue,Imbedded objects in word documents are problematic
+70,Cyber,Continue,Cyber‑only file - whitelisted

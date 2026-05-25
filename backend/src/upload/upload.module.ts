@@ -9,6 +9,8 @@ import { PrismaService } from '../prisma/prisma.service'
 
 import { StorageService } from '../storage/storage.service'
 
+import { MessagesService } from '../messages/messages.service'
+
 @Module({
   controllers: [UploadController],
 
@@ -17,6 +19,7 @@ import { StorageService } from '../storage/storage.service'
     ValidationService,
     PrismaService,
     StorageService,
+    MessagesService,
   ],
 })
 export class UploadModule {}
