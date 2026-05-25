@@ -9,26 +9,6 @@ interface Props {
   node: TreeNode
 }
 
-function getValidationClasses(
-  validation?: string,
-) {
-  switch (
-    validation
-  ) {
-    case 'blocked':
-      return 'text-red-400'
-
-    case 'cyber':
-      return 'text-yellow-400'
-
-    case 'allowed':
-      return 'text-green-400'
-
-    default:
-      return 'text-slate-300'
-  }
-}
-
 export function FileNode({ node }: Props) {
   const [expanded, setExpanded] = useState(true)
   const [hovered, setHovered] = useState(false)

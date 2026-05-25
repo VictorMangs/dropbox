@@ -118,17 +118,9 @@ export async function processSingleUpload(
         .aborted
     ) {
       updateQueueItem(item.id, {
-        status:
-          item.status ===
-          'paused'
-            ? 'paused'
-            : 'cancelled',
+        status: 'cancelled',
 
-        error:
-          item.status ===
-          'paused'
-            ? 'Upload paused'
-            : 'Upload cancelled',
+        error: 'Upload cancelled',
       })
 
       return
@@ -167,9 +159,6 @@ export async function processUploads({
   queue,
   sessionId,
   updateQueueItem,
-  setFiles,
-  getQueueItem,
-  getSchedulerPaused,
 }: {
   queue: UploadQueueItem[]
   sessionId: string
@@ -177,17 +166,13 @@ export async function processUploads({
     id: string,
     updates: Partial<UploadQueueItem>,
   ) => void
-  setFiles: (files: any[]) => void
-  getQueueItem: (id: string) => UploadQueueItem | undefined
-  getSchedulerPaused: () => boolean
-}) {
+}){
   const pendingQueue =
     queue
       .filter(
         (item) =>
           ![
             'completed',
-            'paused',
             'cancelled',
           ].includes(
             item.status,

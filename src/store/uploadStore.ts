@@ -45,22 +45,6 @@ interface UploadStore {
 
   cancelAllUploads: () => void
 
-  pauseQueueItem: (
-    id: string,
-  ) => void
-
-  resumeQueueItem: (
-    id: string,
-  ) => void
-
-  pauseAllUploads: () => void
-
-  schedulerPaused: boolean
-
-  setSchedulerPaused: (
-    paused: boolean,
-  ) => void
-
 }
 
 export const useUploadStore =
@@ -72,8 +56,6 @@ export const useUploadStore =
 		uploadQueue: [],
 
     loading: false,
-
-    schedulerPaused: false,
 
     setSessionId: (
       sessionId,
@@ -110,13 +92,6 @@ export const useUploadStore =
 				uploadQueue,
 			})),
     
-    setSchedulerPaused: (
-      schedulerPaused,
-    ) =>
-      set(() => ({
-        schedulerPaused,
-      })),
-
 		updateQueueItem: (
 			id,
 			updates,
@@ -200,79 +175,5 @@ export const useUploadStore =
           ),
       }
     }),
-
-    pauseQueueItem: (
-      id,
-    ) =>
-      set((state) => ({
-        uploadQueue:
-          state.uploadQueue.map(
-            (item) => {
-              if (
-                item.id !== id
-              ) {
-                return item
-              }
-
-              item.abortController?.abort()
-
-              return {
-                ...item,
-                status: 'paused',
-              }
-            },
-          ),
-      })),
-    
-    resumeQueueItem: (
-      id,
-    ) =>
-      set((state) => ({
-        schedulerPaused: false,
-
-        uploadQueue:
-          state.uploadQueue.map(
-            (item) =>
-              item.id === id
-                ? {
-                    ...item,
-                    status:
-                      'pending',
-                    error: undefined,
-                  }
-                : item,
-          ),
-      })),
-
-    pauseAllUploads: () =>
-      set((state) => {
-        state.uploadQueue.forEach(
-          (item) => {
-            if (
-              item.status ===
-              'uploading'
-            ) {
-              item.abortController?.abort()
-            }
-          },
-        )
-
-        return {
-          schedulerPaused: true,
-
-          uploadQueue:
-            state.uploadQueue.map(
-              (item) =>
-                item.status ===
-                'uploading'
-                  ? {
-                      ...item,
-                      status:
-                        'paused',
-                    }
-                  : item,
-            ),
-        }
-      }),
     
   }))

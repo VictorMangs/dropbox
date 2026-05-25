@@ -1,7 +1,3 @@
-import {
-  processSingleUpload,
-} from '../services/uploadOrchestrator'
-
 import { useUploadStore } from '../store/uploadStore'
 
 export function UploadQueue() {
@@ -9,12 +5,6 @@ export function UploadQueue() {
     useUploadStore(
       (state) =>
         state.uploadQueue,
-    )
-
-  const sessionId =
-    useUploadStore(
-      (state) =>
-        state.sessionId,
     )
 
   const updateQueueItem =
@@ -33,24 +23,6 @@ export function UploadQueue() {
     useUploadStore(
       (state) =>
         state.cancelAllUploads,
-    )
-
-  const pauseQueueItem =
-    useUploadStore(
-      (state) =>
-        state.pauseQueueItem,
-    )
-
-  const resumeQueueItem =
-    useUploadStore(
-      (state) =>
-        state.resumeQueueItem,
-    )
-
-  const pauseAllUploads =
-    useUploadStore(
-      (state) =>
-        state.pauseAllUploads,
     )
 
   const totalFiles =
@@ -86,13 +58,6 @@ export function UploadQueue() {
         'pending',
     ).length
 
-  const pausedUploads =
-    uploadQueue.filter(
-      (item) =>
-        item.status ===
-        'paused',
-    ).length
-
   const failedUploads =
     uploadQueue.filter(
       (item) =>
@@ -103,7 +68,6 @@ export function UploadQueue() {
   const summary = {
     completed: 0,
     failed: 0,
-    paused: 0,
     cancelled: 0,
   }
 
@@ -124,13 +88,6 @@ export function UploadQueue() {
 
     if (
       item.status ===
-      'paused'
-    ) {
-      summary.paused += 1
-    }
-
-    if (
-      item.status ===
       'cancelled'
     ) {
       summary.cancelled += 1
@@ -140,15 +97,6 @@ export function UploadQueue() {
   return (
     <div className="space-y-4 rounded bg-slate-800 p-4">
       <div className="flex gap-2">
-        <button
-          onClick={
-            pauseAllUploads
-          }
-          className="rounded bg-yellow-700 px-3 py-2 text-sm hover:bg-yellow-600"
-        >
-          Pause All Uploads
-        </button>
-
         <button
           onClick={
             cancelAllUploads
@@ -199,12 +147,6 @@ export function UploadQueue() {
           </div>
 
           <div>
-            Paused:
-            {' '}
-            {pausedUploads}
-          </div>
-
-          <div>
             Failed:
             {' '}
             {failedUploads}
@@ -220,10 +162,6 @@ export function UploadQueue() {
         Failed:
         {' '}
         {summary.failed}
-        {' | '}
-        Paused:
-        {' '}
-        {summary.paused}
         {' | '}
         Cancelled:
         {' '}
@@ -294,12 +232,9 @@ export function UploadQueue() {
                             'failed'
                         ? 'h-full bg-red-500'
                         : item.status ===
-                              'paused'
-                          ? 'h-full bg-yellow-400'
-                          : item.status ===
-                                'cancelled'
-                            ? 'h-full bg-yellow-500'
-                            : 'h-full bg-blue-500'
+                              'cancelled'
+                          ? 'h-full bg-yellow-500'
+                          : 'h-full bg-blue-500'
                   }
                   style={{
                     width: `${item.progress}%`,
@@ -307,63 +242,18 @@ export function UploadQueue() {
                 />
               </div>
 
-              <div className="mt-2 flex gap-2">
+               <div className="mt-2 flex gap-2">
                 {item.status ===
                   'uploading' && (
-                  <>
-                    <button
-                      onClick={() =>
-                        pauseQueueItem(
-                          item.id,
-                        )
-                      }
-                      className="rounded bg-yellow-700 px-2 py-1 text-xs hover:bg-yellow-600"
-                    >
-                      Pause
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        cancelQueueItem(
-                          item.id,
-                        )
-                      }
-                      className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
-                    >
-                      Cancel
-                    </button>
-                  </>
-                )}
-
-                {item.status ===
-                  'paused' && (
                   <button
-                    onClick={async () => {
-                      resumeQueueItem(
+                    onClick={() =>
+                      cancelQueueItem(
                         item.id,
                       )
-
-                      if (
-                        !sessionId
-                      ) {
-                        return
-                      }
-
-                      await processSingleUpload(
-                        {
-                          ...item,
-                          status:
-                            'pending',
-                        },
-
-                        sessionId,
-
-                        updateQueueItem,
-                      )
-                    }}
-                    className="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600"
+                    }
+                    className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
                   >
-                    Resume
+                    Cancel
                   </button>
                 )}
               </div>
