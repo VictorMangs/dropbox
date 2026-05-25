@@ -20,9 +20,6 @@ export class ValidationService implements OnModuleInit {
     const allowed = this.parseCsvWithColumn(fs.readFileSync(allowedPath, 'utf-8'), 'Extension')
     const cyber = this.parseCsvWithColumn(fs.readFileSync(cyberPath, 'utf-8'), 'File Extention')
 
-    // console.log('Parsed Allowed Extensions Array:', allowed)
-    // console.log('Parsed Cyber Extensions Array:', cyber)
-
     // Allowed is everything in AllowedFileTypes
     this.allowedExtensions = new Set(allowed)
 
