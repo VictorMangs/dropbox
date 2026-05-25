@@ -30,10 +30,6 @@ declare module 'react' {
 }
 
 export function Dropzone() {
-  const setFiles = useUploadStore(
-    (state) => state.setFiles,
-  )
-
   const setSessionId =
     useUploadStore(
       (state) =>
@@ -57,15 +53,6 @@ export function Dropzone() {
       (state) =>
         state.updateQueueItem,
     )
-
-  const getQueueItem =
-    useUploadStore.getState
-
-  const getSchedulerPaused =
-    () =>
-      useUploadStore
-        .getState()
-        .schedulerPaused
 
   const onDrop = async (
     acceptedFiles: File[],
@@ -116,17 +103,6 @@ export function Dropzone() {
           session.id,
 
         updateQueueItem,
-
-        setFiles,
-
-        getQueueItem: (id) =>
-          getQueueItem()
-            .uploadQueue.find(
-              (item) =>
-                item.id === id,
-            ),
-
-        getSchedulerPaused,
 
       })
     } catch (error) {
