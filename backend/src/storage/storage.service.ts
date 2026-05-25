@@ -15,21 +15,31 @@ export class StorageService {
     relativePath: string,
     buffer: Buffer,
   ) {
-    const normalizedPath =
-      path.normalize(relativePath)
-
-    if (normalizedPath.includes('..')) {
-    throw new Error(
-        'Invalid relative path',
-    )
-    }
-
-    const fullPath = path.join(
+    const intendedBase = path.join(
       this.basePath,
       'uploads',
       sessionId,
-      normalizedPath,
     )
+
+    const fullPath = path.resolve(
+      intendedBase,
+      relativePath,
+    )
+
+    const resolvedBase = path.resolve(
+      intendedBase,
+    )
+
+    if (
+      !fullPath.startsWith(
+        resolvedBase + path.sep,
+      ) &&
+      fullPath !== resolvedBase
+    ) {
+      throw new Error(
+        'Invalid relative path',
+      )
+    }
 
     const directory =
       path.dirname(fullPath)
