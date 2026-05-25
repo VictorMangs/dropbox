@@ -6,7 +6,6 @@ export type ValidationState =
 export type UploadStatus =
   | 'pending'
   | 'uploading'
-  | 'paused'
   | 'completed'
   | 'failed'
   | 'cancelled'
