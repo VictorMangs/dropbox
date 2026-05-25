@@ -1,32 +1,2536 @@
-[Nest] 95560  - 05/17/2026, 7:30:25 PM     LOG [NestFactory] Starting Nest application...
-[Nest] 95560  - 05/17/2026, 7:30:25 PM     LOG [InstanceLoader] AppModule dependencies initialized +10ms
-[Nest] 95560  - 05/17/2026, 7:30:25 PM   ERROR [ExceptionHandler] PrismaClientInitializationError: `PrismaClient` needs to be constructed with a non-empty, valid `PrismaClientOptions`:
+--- FILE: dropbox\src\App.css ---
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
 
-```
-new PrismaClient({
-  ...
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.hero {
+  position: relative;
+
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
+
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
+
+  .framework,
+  .vite {
+    position: absolute;
+  }
+
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
+
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
+
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
+
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
+    }
+
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+  }
+}
+
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
+
+.ticks {
+  position: relative;
+  width: 100%;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
+
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
+
+--- FILE: dropbox\src\App.tsx ---
+import { Dropzone } from './components/Dropzone'
+import { FileTree } from './components/FileTree'
+import { ValidationSummary } from './components/ValidationSummary'
+
+import { useUploadStore } from './store/uploadStore'
+
+import { buildFileTree } from './utils/buildFileTree'
+
+import { useEffect } from 'react'
+
+import { getSession } from './api/uploadApi'
+
+import { getSessionId, clearSessionId } from './utils/sessionStorage'
+
+import { UploadQueue } from './components/UploadQueue'
+
+function App() {
+
+  useEffect(() => {
+		async function restoreSession() {
+			const storedSessionId =
+				getSessionId()
+
+			if (!storedSessionId) {
+				return
+			}
+
+			try {
+				setLoading(true)
+
+				const session =
+					await getSession(
+						storedSessionId,
+					)
+
+				setSessionId(session.id)
+
+				setFiles(session.files)
+			} catch (error) {
+				console.error(
+					'Failed to restore session',
+					error,
+				)
+
+				clearSessionId()
+			} finally {
+				setLoading(false)
+			}
+		}
+
+		restoreSession()
+	}, [])
+
+  const files = useUploadStore(
+    (state) => state.files,
+  )
+
+  const clearFiles = useUploadStore(
+    (state) => state.clearFiles,
+  )
+
+  const loading = useUploadStore(
+    (state) => state.loading,
+  )
+
+  const tree = buildFileTree(files)
+
+  const setFiles = useUploadStore(
+    (state) => state.setFiles,
+    )
+
+  const setSessionId = useUploadStore(
+    (state) =>
+    state.setSessionId,
+  )
+  const setLoading = useUploadStore(
+    (state) =>
+    state.setLoading,
+  )
+
+  return (
+    <div className="min-h-screen bg-slate-900 p-8 text-white">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div>
+          <h1 className="text-4xl font-bold">
+            File Transfer MVP
+          </h1>
+
+          <p className="mt-2 text-slate-400">
+            React migration prototype for upload
+            validation.
+          </p>
+        </div>
+
+        <Dropzone />
+        <UploadQueue />
+
+        {loading && (
+          <div className="rounded bg-blue-600 p-4">
+            Uploading files...
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <button
+            onClick={clearFiles}
+            className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
+          >
+            Clear
+          </button>
+        </div>
+
+        <ValidationSummary files={files} />
+
+        <FileTree tree={tree} />
+      </div>
+    </div>
+  )
+}
+
+export default App
+
+--- FILE: dropbox\src\index.css ---
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: #0f172a;
+  color: white;
+  font-family: Inter, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+--- FILE: dropbox\src\main.tsx ---
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.tsx'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+--- FILE: dropbox\src\api\uploadApi.ts ---
+import axios from 'axios'
+
+const API_BASE =
+  'http://localhost:3000'
+
+export async function createSession() {
+  const response = await fetch(
+    `${API_BASE}/upload-sessions`,
+    {
+      method: 'POST',
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      'Failed to create upload session',
+    )
+  }
+
+  return response.json()
+}
+
+export async function uploadFile(
+  sessionId: string,
+  file: File,
+  relativePath: string,
+  onProgress?: (
+    progress: number,
+  ) => void,
+
+  signal?: AbortSignal,
+) {
+  const formData = new FormData()
+
+  formData.append('file', file)
+
+  formData.append(
+    'relativePath',
+    relativePath,
+  )
+
+  try {
+		const response =
+			await axios.post(
+				`${API_BASE}/upload-sessions/${sessionId}/files`,
+				formData,
+				{
+          signal,
+					onUploadProgress: (
+						progressEvent,
+					) => {
+						if (
+							!progressEvent.total
+						) {
+							return
+						}
+
+						const progress =
+							Math.round(
+								(progressEvent.loaded /
+									progressEvent.total) *
+									100,
+							)
+
+						onProgress?.(progress)
+					},
+				},
+			)
+
+		return response.data
+	} catch (error) {
+		if (
+			axios.isAxiosError(error)
+		) {
+			throw new Error(
+				error.response?.data
+					?.message ||
+					'Upload failed',
+			)
+		}
+
+		throw error
+	}
+}
+
+export async function getSession(
+  sessionId: string,
+) {
+  const response = await fetch(
+    `${API_BASE}/upload-sessions/${sessionId}`,
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      'Failed to fetch upload session',
+    )
+  }
+
+  return response.json()
+}
+
+--- FILE: dropbox\src\components\Dropzone.tsx ---
+import { useDropzone } from 'react-dropzone'
+
+import { useUploadStore } from '../store/uploadStore'
+
+import { createSession } from '../api/uploadApi'
+
+import {
+  processUploads,
+} from '../services/uploadOrchestrator'
+
+import {
+  saveSessionId,
+} from '../utils/sessionStorage'
+
+import type {
+  UploadQueueItem,
+} from '../types/upload'
+
+declare module 'react' {
+  interface InputHTMLAttributes<T>
+    extends HTMLAttributes<T> {
+    directory?: string
+
+    webkitdirectory?: string
+  }
+}
+
+export function Dropzone() {
+  const setFiles = useUploadStore(
+    (state) => state.setFiles,
+  )
+
+  const setSessionId =
+    useUploadStore(
+      (state) =>
+        state.setSessionId,
+    )
+
+  const setLoading =
+    useUploadStore(
+      (state) =>
+        state.setLoading,
+    )
+
+  const setUploadQueue =
+    useUploadStore(
+      (state) =>
+        state.setUploadQueue,
+    )
+
+  const updateQueueItem =
+    useUploadStore(
+      (state) =>
+        state.updateQueueItem,
+    )
+  
+  const getQueueItem =
+    useUploadStore.getState
+  
+  const getSchedulerPaused =
+    () =>
+      useUploadStore
+        .getState()
+        .schedulerPaused
+
+  const onDrop = async (
+    acceptedFiles: File[],
+  ) => {
+    try {
+      setLoading(true)
+
+      const session =
+        await createSession()
+
+      setSessionId(session.id)
+
+      saveSessionId(session.id)
+
+      const queue:
+        UploadQueueItem[] =
+        acceptedFiles.map(
+          (file) => ({
+            id:
+              crypto.randomUUID(),
+
+            file,
+
+            relativePath:
+              file.webkitRelativePath ||
+              file.name,
+
+            progress: 0,
+
+            status: 'pending',
+
+            priority: 'normal',
+
+            createdAt: new Date().toISOString(),
+
+            retryCount: 0,
+          }),
+        )
+
+      setUploadQueue(queue)
+
+      await processUploads({
+        queue,
+
+        sessionId:
+          session.id,
+
+        updateQueueItem,
+
+        setFiles,
+
+        getQueueItem: (id) =>
+          getQueueItem()
+            .uploadQueue.find(
+              (item) =>
+                item.id === id,
+            ),
+        
+        getSchedulerPaused,
+        
+      })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const {
+    getRootProps,
+    getInputProps,
+    isDragActive,
+  } = useDropzone({
+    onDrop,
+  })
+
+  return (
+    <div
+      {...getRootProps()}
+      className="cursor-pointer rounded-lg border-2 border-dashed border-slate-600 p-12 text-center transition hover:border-blue-400"
+    >
+      <input
+        {...getInputProps()}
+        webkitdirectory="true"
+        directory=""
+        multiple
+      />
+
+      {isDragActive ? (
+        <p>
+          Drop files here...
+        </p>
+      ) : (
+        <div>
+          <p className="text-lg font-semibold">
+            Drag and drop folders
+            here
+          </p>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Or click to browse
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+--- FILE: dropbox\src\components\FileNode.tsx ---
+import { useState } from 'react'
+
+import type { TreeNode } from '../types/upload'
+
+import { ValidationBadge } from './ValidationBadge'
+
+interface Props {
+  node: TreeNode
+}
+
+export function FileNode({ node }: Props) {
+  const [expanded, setExpanded] = useState(true)
+
+  const isFolder = node.type === 'folder'
+
+  return (
+    <div className="ml-4 mt-2">
+      <div className="flex items-center gap-2">
+        {isFolder && (
+          <button
+            className="w-6 text-slate-400"
+            onClick={() =>
+              setExpanded(!expanded)
+            }
+          >
+            {expanded ? '-' : '+'}
+          </button>
+        )}
+
+        {!isFolder && (
+          <div className="w-6" />
+        )}
+
+        <span>
+          {isFolder ? 'ðŸ“' : 'ðŸ“„'}
+        </span>
+
+        <span>{node.name}</span>
+
+        <ValidationBadge
+          state={node.validation}
+        />
+      </div>
+
+      {expanded &&
+        node.children?.map((child) => (
+          <FileNode
+            key={child.path}
+            node={child}
+          />
+        ))}
+    </div>
+  )
+}
+
+--- FILE: dropbox\src\components\FileTree.tsx ---
+import type { TreeNode } from '../types/upload'
+
+import { FileNode } from './FileNode'
+
+interface Props {
+  tree: TreeNode[]
+}
+
+export function FileTree({ tree }: Props) {
+  if (!tree.length) {
+    return (
+      <div className="rounded border border-slate-700 p-6 text-slate-400">
+        No files uploaded.
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded border border-slate-700 p-4">
+      {tree.map((node) => (
+        <FileNode
+          key={node.path}
+          node={node}
+        />
+      ))}
+    </div>
+  )
+}
+
+--- FILE: dropbox\src\components\UploadQueue.tsx ---
+import {
+  processSingleUpload,
+} from '../services/uploadOrchestrator'
+
+import { useUploadStore } from '../store/uploadStore'
+
+export function UploadQueue() {
+  const uploadQueue =
+    useUploadStore(
+      (state) =>
+        state.uploadQueue,
+    )
+
+  const sessionId =
+    useUploadStore(
+      (state) =>
+        state.sessionId,
+    )
+
+  const updateQueueItem =
+    useUploadStore(
+      (state) =>
+        state.updateQueueItem,
+    )
+
+  const cancelQueueItem =
+    useUploadStore(
+      (state) =>
+        state.cancelQueueItem,
+    )
+
+  const cancelAllUploads =
+    useUploadStore(
+      (state) =>
+        state.cancelAllUploads,
+    )
+
+  const pauseQueueItem =
+    useUploadStore(
+      (state) =>
+        state.pauseQueueItem,
+    )
+
+  const resumeQueueItem =
+    useUploadStore(
+      (state) =>
+        state.resumeQueueItem,
+    )
+
+  const pauseAllUploads =
+    useUploadStore(
+      (state) =>
+        state.pauseAllUploads,
+    )
+
+  const totalFiles =
+    uploadQueue.length
+
+  const completedFiles =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'completed',
+    ).length
+
+  const overallProgress =
+    totalFiles === 0
+      ? 0
+      : Math.round(
+          (completedFiles /
+            totalFiles) *
+            100,
+        )
+
+  const activeUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'uploading',
+    ).length
+
+  const pendingUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'pending',
+    ).length
+
+  const pausedUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'paused',
+    ).length
+
+  const failedUploads =
+    uploadQueue.filter(
+      (item) =>
+        item.status ===
+        'failed',
+    ).length
+
+  const summary = {
+    completed: 0,
+    failed: 0,
+    paused: 0,
+    cancelled: 0,
+  }
+
+  for (const item of uploadQueue) {
+    if (
+      item.status ===
+      'completed'
+    ) {
+      summary.completed += 1
+    }
+
+    if (
+      item.status ===
+      'failed'
+    ) {
+      summary.failed += 1
+    }
+
+    if (
+      item.status ===
+      'paused'
+    ) {
+      summary.paused += 1
+    }
+
+    if (
+      item.status ===
+      'cancelled'
+    ) {
+      summary.cancelled += 1
+    }
+  }
+
+  return (
+    <div className="space-y-4 rounded bg-slate-800 p-4">
+      <div className="flex gap-2">
+        <button
+          onClick={
+            pauseAllUploads
+          }
+          className="rounded bg-yellow-700 px-3 py-2 text-sm hover:bg-yellow-600"
+        >
+          Pause All Uploads
+        </button>
+
+        <button
+          onClick={
+            cancelAllUploads
+          }
+          className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600"
+        >
+          Cancel All Uploads
+        </button>
+      </div>
+
+      <div className="space-y-1">
+        <div className="flex justify-between text-sm">
+          <span>
+            Overall Progress
+          </span>
+
+          <span>
+            {overallProgress}%
+          </span>
+        </div>
+
+        <div className="h-3 overflow-hidden rounded bg-slate-700">
+          <div
+            className="h-full bg-blue-500 transition-all"
+            style={{
+              width: `${overallProgress}%`,
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="rounded bg-slate-900 p-4 text-sm">
+        <div className="font-semibold">
+          Scheduler Metrics
+        </div>
+
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <div>
+            Pending:
+            {' '}
+            {pendingUploads}
+          </div>
+
+          <div>
+            Active:
+            {' '}
+            {activeUploads}
+          </div>
+
+          <div>
+            Paused:
+            {' '}
+            {pausedUploads}
+          </div>
+
+          <div>
+            Failed:
+            {' '}
+            {failedUploads}
+          </div>
+        </div>
+      </div>
+
+      <div className="text-sm text-slate-400">
+        Completed:
+        {' '}
+        {summary.completed}
+        {' | '}
+        Failed:
+        {' '}
+        {summary.failed}
+        {' | '}
+        Paused:
+        {' '}
+        {summary.paused}
+        {' | '}
+        Cancelled:
+        {' '}
+        {summary.cancelled}
+      </div>
+
+      <div className="space-y-3">
+        {uploadQueue.map(
+          (item) => (
+            <div
+              key={item.id}
+              className="rounded bg-slate-900 p-3"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">
+                    {
+                      item.relativePath
+                    }
+                  </div>
+
+                  <div className="text-sm text-slate-400">
+                    {
+                      item.status
+                    }
+                  </div>
+                </div>
+
+                <select
+                  value={
+                    item.priority
+                  }
+                  onChange={(
+                    e,
+                  ) =>
+                    updateQueueItem(
+                      item.id,
+                      {
+                        priority:
+                          e.target
+                            .value as any,
+                      },
+                    )
+                  }
+                  className="rounded bg-slate-700 px-2 py-1 text-xs"
+                >
+                  <option value="high">
+                    High
+                  </option>
+
+                  <option value="normal">
+                    Normal
+                  </option>
+
+                  <option value="low">
+                    Low
+                  </option>
+                </select>
+              </div>
+
+              <div className="mt-2 h-2 overflow-hidden rounded bg-slate-700">
+                <div
+                  className={
+                    item.status ===
+                    'completed'
+                      ? 'h-full bg-green-500'
+                      : item.status ===
+                            'failed'
+                        ? 'h-full bg-red-500'
+                        : item.status ===
+                              'paused'
+                          ? 'h-full bg-yellow-400'
+                          : item.status ===
+                                'cancelled'
+                            ? 'h-full bg-yellow-500'
+                            : 'h-full bg-blue-500'
+                  }
+                  style={{
+                    width: `${item.progress}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-2 flex gap-2">
+                {item.status ===
+                  'uploading' && (
+                  <>
+                    <button
+                      onClick={() =>
+                        pauseQueueItem(
+                          item.id,
+                        )
+                      }
+                      className="rounded bg-yellow-700 px-2 py-1 text-xs hover:bg-yellow-600"
+                    >
+                      Pause
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        cancelQueueItem(
+                          item.id,
+                        )
+                      }
+                      className="rounded bg-red-700 px-2 py-1 text-xs hover:bg-red-600"
+                    >
+                      Cancel
+                    </button>
+                  </>
+                )}
+
+                {item.status ===
+                  'paused' && (
+                  <button
+                    onClick={async () => {
+                      resumeQueueItem(
+                        item.id,
+                      )
+
+                      if (
+                        !sessionId
+                      ) {
+                        return
+                      }
+
+                      await processSingleUpload(
+                        {
+                          ...item,
+                          status:
+                            'pending',
+                        },
+
+                        sessionId,
+
+                        updateQueueItem,
+                      )
+                    }}
+                    className="rounded bg-blue-700 px-2 py-1 text-xs hover:bg-blue-600"
+                  >
+                    Resume
+                  </button>
+                )}
+              </div>
+
+              {item.error && (
+                <div className="mt-2 text-xs text-red-400">
+                  {item.error}
+                </div>
+              )}
+            </div>
+          ),
+        )}
+      </div>
+    </div>
+  )
+}
+
+--- FILE: dropbox\src\components\ValidationBadge.tsx ---
+import clsx from 'clsx'
+
+import type { ValidationState } from '../types/upload'
+
+interface Props {
+  state?: ValidationState
+}
+
+export function ValidationBadge({
+  state,
+}: Props) {
+  if (!state) {
+    return null
+  }
+
+  return (
+    <span
+      className={clsx(
+        'rounded px-2 py-1 text-xs font-semibold',
+        {
+          'bg-green-600': state === 'allowed',
+          'bg-yellow-600': state === 'cyber',
+          'bg-red-600': state === 'blocked',
+        },
+      )}
+    >
+      {state}
+    </span>
+  )
+}
+
+--- FILE: dropbox\src\components\ValidationSummary.tsx ---
+import type { UploadRecord } from '../types/upload'
+
+interface Props {
+  files: UploadRecord[]
+}
+
+export function ValidationSummary({
+  files,
+}: Props) {
+  const summary = {
+    allowed: 0,
+    cyber: 0,
+    blocked: 0,
+  }
+
+  for (const file of files) {
+    const state = file.validationState
+    summary[state] += 1
+  }
+
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      <div className="rounded bg-green-600 p-4">
+        <div className="text-sm">Allowed</div>
+        <div className="text-2xl font-bold">
+          {summary.allowed}
+        </div>
+      </div>
+
+      <div className="rounded bg-yellow-600 p-4">
+        <div className="text-sm">Cyber</div>
+        <div className="text-2xl font-bold">
+          {summary.cyber}
+        </div>
+      </div>
+
+      <div className="rounded bg-red-600 p-4">
+        <div className="text-sm">Blocked</div>
+        <div className="text-2xl font-bold">
+          {summary.blocked}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+--- FILE: dropbox\src\services\uploadOrchestrator.ts ---
+import { uploadFile } from '../api/uploadApi'
+
+import type {
+  UploadQueueItem,
+} from '../types/upload'
+
+const MAX_RETRIES = 3
+
+function getDynamicConcurrency(
+  queueSize: number,
+) {
+  if (queueSize <= 3) {
+    return 1
+  }
+
+  if (queueSize <= 10) {
+    return 3
+  }
+
+  if (queueSize <= 25) {
+    return 4
+  }
+
+  return 5
+}
+
+function getPriorityWeight(
+  priority: string,
+) {
+  switch (priority) {
+    case 'high':
+      return 3
+
+    case 'normal':
+      return 2
+
+    case 'low':
+      return 1
+
+    default:
+      return 0
+  }
+}
+
+function applyPriorityAging(
+  item: UploadQueueItem,
+) {
+  const ageMs =
+    Date.now() -
+    new Date(
+      item.createdAt,
+    ).getTime()
+
+  const ageMinutes =
+    ageMs / 1000 / 60
+
+  if (
+    ageMinutes > 5 &&
+    item.priority === 'low'
+  ) {
+    return 2
+  }
+
+  return getPriorityWeight(
+    item.priority,
+  )
+}
+
+function delay(ms: number) {
+  return new Promise(
+    (resolve) =>
+      setTimeout(resolve, ms),
+  )
+}
+
+export async function processSingleUpload(
+  item: UploadQueueItem,
+  sessionId: string,
+  updateQueueItem: (
+    id: string,
+    updates: Partial<UploadQueueItem>,
+  ) => void,
+) {
+  const abortController =
+    new AbortController()
+
+  updateQueueItem(item.id, {
+    status: 'uploading',
+    error: undefined,
+    abortController,
+  })
+
+  try {
+    await uploadFile(
+      sessionId,
+      item.file,
+      item.relativePath,
+
+      (progress) => {
+        updateQueueItem(
+          item.id,
+          {
+            progress,
+          },
+        )
+      },
+
+      abortController.signal,
+    )
+
+    updateQueueItem(item.id, {
+      status: 'completed',
+      progress: 100,
+    })
+  } catch (error) {
+    if (
+      abortController.signal
+        .aborted
+    ) {
+      updateQueueItem(item.id, {
+        status:
+          item.status ===
+          'paused'
+            ? 'paused'
+            : 'cancelled',
+
+        error:
+          item.status ===
+          'paused'
+            ? 'Upload paused'
+            : 'Upload cancelled',
+      })
+
+      return
+    }
+
+    const retries =
+      item.retryCount + 1
+
+    if (retries <= MAX_RETRIES) {
+      updateQueueItem(item.id, {
+        status: 'pending',
+        retryCount: retries,
+
+        error: `Retrying upload (${retries}/${MAX_RETRIES})`,
+      })
+
+      await delay(
+        retries * 1000,
+      )
+
+      return
+    }
+
+    updateQueueItem(item.id, {
+      status: 'failed',
+
+      error:
+        error instanceof Error
+          ? error.message
+          : 'Upload failed',
+    })
+  }
+}
+
+export async function processUploads({
+  queue,
+  sessionId,
+  updateQueueItem,
+  setFiles,
+  getQueueItem,
+  getSchedulerPaused,
+}: {
+  queue: UploadQueueItem[]
+  sessionId: string
+  updateQueueItem: (
+    id: string,
+    updates: Partial<UploadQueueItem>,
+  ) => void
+  setFiles: (files: any[]) => void
+  getQueueItem: (id: string) => UploadQueueItem | undefined
+  getSchedulerPaused: () => boolean
+}) {
+  const pendingQueue =
+    queue
+      .filter(
+        (item) =>
+          ![
+            'completed',
+            'paused',
+            'cancelled',
+          ].includes(
+            item.status,
+          ),
+      )
+      .sort(
+        (a, b) =>
+          applyPriorityAging(
+            b,
+          ) -
+          applyPriorityAging(a),
+      )
+
+  let currentIndex = 0
+
+  async function worker() {
+    while (
+      currentIndex <
+      pendingQueue.length
+    ) {
+      const item =
+        pendingQueue[
+          currentIndex
+        ]
+
+      currentIndex += 1
+
+      await processSingleUpload(
+        item,
+        sessionId,
+        updateQueueItem,
+      )
+    }
+  }
+
+  const workers = Array.from(
+    {
+      length:
+        getDynamicConcurrency(
+          pendingQueue.length,
+        ),
+    },
+    () => worker(),
+  )
+
+  await Promise.all(workers)
+}
+
+--- FILE: dropbox\src\store\uploadStore.ts ---
+import { create } from 'zustand'
+
+import type { UploadRecord, UploadQueueItem } from '../types/upload'
+import { clearSessionId } from '../utils/sessionStorage'
+
+interface UploadStore {
+  sessionId: string | null
+
+  files: UploadRecord[]
+
+	uploadQueue: UploadQueueItem[]
+
+  loading: boolean
+
+  setSessionId: (
+    sessionId: string,
+  ) => void
+
+  setFiles: (
+    files: UploadRecord[],
+  ) => void
+
+  setLoading: (
+    loading: boolean,
+  ) => void
+
+  clearFiles: () => void
+
+	setUploadQueue: (
+		queue: UploadQueueItem[],
+	) => void
+
+	updateQueueItem: (
+		id: string,
+		updates: Partial<UploadQueueItem>,
+	) => void
+
+	retryQueueItem: (
+  	id: string,
+	) => void
+  
+  cancelQueueItem: (
+    id: string,
+  ) => void
+
+  cancelAllUploads: () => void
+
+  pauseQueueItem: (
+    id: string,
+  ) => void
+
+  resumeQueueItem: (
+    id: string,
+  ) => void
+
+  pauseAllUploads: () => void
+
+  schedulerPaused: boolean
+
+  setSchedulerPaused: (
+    paused: boolean,
+  ) => void
+
+}
+
+export const useUploadStore =
+  create<UploadStore>((set) => ({
+    sessionId: null,
+
+    files: [],
+
+		uploadQueue: [],
+
+    loading: false,
+
+    schedulerPaused: false,
+
+    setSessionId: (
+      sessionId,
+    ) =>
+      set(() => ({
+        sessionId,
+      })),
+
+    setFiles: (files) =>
+      set(() => ({
+        files,
+      })),
+
+    setLoading: (
+      loading,
+    ) =>
+      set(() => ({
+        loading,
+      })),
+
+    clearFiles: () => {
+			clearSessionId()
+
+			set(() => ({
+					sessionId: null,
+					files: [],
+			}))
+			},
+
+		setUploadQueue: (
+			uploadQueue,
+		) =>
+			set(() => ({
+				uploadQueue,
+			})),
+    
+    setSchedulerPaused: (
+      schedulerPaused,
+    ) =>
+      set(() => ({
+        schedulerPaused,
+      })),
+
+		updateQueueItem: (
+			id,
+			updates,
+		) =>
+			set((state) => ({
+				uploadQueue:
+					state.uploadQueue.map(
+						(item) =>
+							item.id === id
+								? {
+										...item,
+										...updates,
+									}
+								: item,
+					),
+		})),
+		
+		retryQueueItem: (
+			id,
+		) =>
+			set((state) => ({
+				uploadQueue:
+					state.uploadQueue.map(
+						(item) =>
+							item.id === id
+								? {
+										...item,
+										status:
+											'pending',
+										progress: 0,
+										error: undefined,
+									}
+								: item,
+					),
+			})),
+      
+    cancelQueueItem: (
+  id,
+) =>
+  set((state) => ({
+    uploadQueue:
+      state.uploadQueue.map(
+        (item) => {
+          if (
+            item.id !== id
+          ) {
+            return item
+          }
+
+          item.abortController?.abort()
+
+          return {
+            ...item,
+            status:
+              'cancelled',
+          }
+        },
+      ),
+  })),
+
+  cancelAllUploads: () =>
+    set((state) => {
+      state.uploadQueue.forEach(
+        (item) => {
+          item.abortController?.abort()
+        },
+      )
+
+      return {
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) =>
+              item.status ===
+              'completed'
+                ? item
+                : {
+                    ...item,
+                    status:
+                      'cancelled',
+                  },
+          ),
+      }
+    }),
+
+    pauseQueueItem: (
+      id,
+    ) =>
+      set((state) => ({
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) => {
+              if (
+                item.id !== id
+              ) {
+                return item
+              }
+
+              item.abortController?.abort()
+
+              return {
+                ...item,
+                status: 'paused',
+              }
+            },
+          ),
+      })),
+    
+    resumeQueueItem: (
+      id,
+    ) =>
+      set((state) => ({
+        schedulerPaused: false,
+
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    status:
+                      'pending',
+                    error: undefined,
+                  }
+                : item,
+          ),
+      })),
+
+    pauseAllUploads: () =>
+      set((state) => {
+        state.uploadQueue.forEach(
+          (item) => {
+            if (
+              item.status ===
+              'uploading'
+            ) {
+              item.abortController?.abort()
+            }
+          },
+        )
+
+        return {
+          schedulerPaused: true,
+
+          uploadQueue:
+            state.uploadQueue.map(
+              (item) =>
+                item.status ===
+                'uploading'
+                  ? {
+                      ...item,
+                      status:
+                        'paused',
+                    }
+                  : item,
+            ),
+        }
+      }),
+    
+  }))
+
+--- FILE: dropbox\src\types\upload.ts ---
+export type ValidationState =
+  | 'allowed'
+  | 'cyber'
+  | 'blocked'
+
+export type UploadStatus =
+  | 'pending'
+  | 'uploading'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+
+export type UploadPriority =
+  | 'high'
+  | 'normal'
+  | 'low'
+  
+export interface UploadRecord {
+  id: string
+
+  sessionId: string
+
+  originalName: string
+
+  relativePath: string
+
+  extension: string
+
+  storedPath: string
+
+  validationState: ValidationState
+
+  validationMessage: string
+
+  createdAt: string
+}
+
+export interface UploadQueueItem {
+  id: string
+
+  file: File
+
+  relativePath: string
+
+  progress: number
+
+  status: UploadStatus
+
+  error?: string
+
+  abortController?: AbortController
+
+  priority: UploadPriority
+
+  createdAt: string
+
+  retryCount: number
+}
+
+export interface UploadSession {
+  id: string
+
+  createdAt: string
+
+  files: UploadRecord[]
+}
+
+export interface TreeNode {
+  name: string
+
+  path: string
+
+  type: 'file' | 'folder'
+
+  validation?: ValidationState
+
+  children?: TreeNode[]
+}
+
+--- FILE: dropbox\src\utils\buildFileTree.ts ---
+import type {
+  TreeNode,
+  UploadRecord,
+  ValidationState,
+} from '../types/upload'
+
+function getWorstValidation(
+  existing: ValidationState | undefined,
+  incoming: ValidationState,
+): ValidationState {
+  const priority = {
+    allowed: 0,
+    cyber: 1,
+    blocked: 2,
+  }
+
+  if (!existing) {
+    return incoming
+  }
+
+  return priority[incoming] > priority[existing]
+    ? incoming
+    : existing
+}
+
+export function buildFileTree(
+  files: UploadRecord[],
+): TreeNode[] {
+  const root: TreeNode[] = []
+
+  for (const uploadFile of files) {
+    const parts =
+      uploadFile.relativePath.split('/')
+
+    let currentLevel = root
+    let currentPath = ''
+
+    parts.forEach((part, index) => {
+      currentPath = currentPath
+        ? `${currentPath}/${part}`
+        : part
+
+      const isFile = index === parts.length - 1
+
+      let existing = currentLevel.find(
+        (node) => node.name === part,
+      )
+
+      if (!existing) {
+        existing = {
+          name: part,
+          path: currentPath,
+          type: isFile ? 'file' : 'folder',
+          children: isFile ? undefined : [],
+        }
+
+        currentLevel.push(existing)
+      }
+
+      if (isFile) {
+        existing.validation =
+          uploadFile.validationState
+      }
+
+      if (!isFile && existing.children) {
+        currentLevel = existing.children
+      }
+    })
+  }
+
+  propagateFolderValidation(root)
+
+  return root
+}
+
+function propagateFolderValidation(
+  nodes: TreeNode[],
+): ValidationState {
+  let worst: ValidationState = 'allowed'
+
+  for (const node of nodes) {
+    if (node.type === 'folder' && node.children) {
+      node.validation =
+        propagateFolderValidation(node.children)
+    }
+
+    if (node.validation) {
+      worst = getWorstValidation(
+        worst,
+        node.validation,
+      )
+    }
+  }
+
+  return worst
+}
+
+--- FILE: dropbox\src\utils\sessionStorage.ts ---
+const STORAGE_KEY =
+  'upload-session-id'
+
+export function saveSessionId(
+  sessionId: string,
+) {
+  localStorage.setItem(
+    STORAGE_KEY,
+    sessionId,
+  )
+}
+
+export function getSessionId() {
+  return localStorage.getItem(
+    STORAGE_KEY,
+  )
+}
+
+export function clearSessionId() {
+  localStorage.removeItem(
+    STORAGE_KEY,
+  )
+}
+
+--- FILE: dropbox\backend\src\app.controller.spec.ts ---
+import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+
+describe('AppController', () => {
+  let appController: AppController;
+
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+
+    appController = app.get<AppController>(AppController);
+  });
+
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});
+
+--- FILE: dropbox\backend\src\app.controller.ts ---
+import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}
+
+--- FILE: dropbox\backend\src\app.module.ts ---
+import { Module } from '@nestjs/common'
+
+import { UploadModule } from './upload/upload.module'
+
+@Module({
+  imports: [UploadModule],
 })
-```
+export class AppModule {}
 
-or
+--- FILE: dropbox\backend\src\app.service.ts ---
+import { Injectable } from '@nestjs/common';
 
-```
-constructor() {
-  super({ ... });
+@Injectable()
+export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
 }
-```
-          
-    at new t (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@prisma\client\src\runtime\getPrismaClient.ts:336:15)
-    at new PrismaService (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\src\prisma\prisma.service.ts:9:8)
-    at Injector.instantiateClass (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\injector.js:426:19)
-    at callback (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\injector.js:72:45)
-    at async Injector.resolveConstructorParams (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\injector.js:176:24)
-    at async Injector.loadInstance (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\injector.js:77:13)
-    at async Injector.loadProvider (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\injector.js:108:9)
-    at async C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\instance-loader.js:56:13
-    at async Promise.all (index 5)
-    at async InstanceLoader.createInstancesOfProviders (C:\Users\User1\Documents\Practice\dropbox_frontend\backend\node_modules\@nestjs\core\injector\instance-loader.js:55:9) {
-  clientVersion: '7.8.0',
-  errorCode: undefined,
-  retryable: undefined
+
+--- FILE: dropbox\backend\src\main.ts ---
+import { NestFactory } from '@nestjs/core'
+
+import { AppModule } from './app.module'
+
+async function bootstrap() {
+  const app =
+    await NestFactory.create(AppModule)
+
+  app.enableCors()
+
+  await app.listen(3000)
 }
+
+bootstrap()
+
+--- FILE: dropbox\backend\src\prisma\prisma.service.ts ---
+import { Injectable, OnModuleInit } from '@nestjs/common'
+import { PrismaClient } from '@prisma/client'
+
+@Injectable()
+export class PrismaService extends PrismaClient implements OnModuleInit {
+  async onModuleInit() {
+    await this.$connect()
+  }
+}
+
+--- FILE: dropbox\backend\src\storage\storage.service.ts ---
+import {
+  Injectable,
+} from '@nestjs/common'
+
+import * as fs from 'fs/promises'
+import * as path from 'path'
+
+@Injectable()
+export class StorageService {
+  private readonly basePath =
+    path.join(process.cwd(), 'storage')
+
+  async saveFile(
+    sessionId: string,
+    relativePath: string,
+    buffer: Buffer,
+  ) {
+    const normalizedPath =
+      path.normalize(relativePath)
+
+    if (normalizedPath.includes('..')) {
+    throw new Error(
+        'Invalid relative path',
+    )
+    }
+
+    const fullPath = path.join(
+      this.basePath,
+      'uploads',
+      sessionId,
+      normalizedPath,
+    )
+
+    const directory =
+      path.dirname(fullPath)
+
+    await fs.mkdir(directory, {
+      recursive: true,
+    })
+
+    await fs.writeFile(fullPath, buffer)
+
+    return fullPath
+  }
+}
+
+--- FILE: dropbox\backend\src\upload\upload.controller.ts ---
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common'
+
+import { FileInterceptor } from '@nestjs/platform-express'
+
+import { UploadService } from './upload.service'
+
+
+@Controller()
+export class UploadController {
+  constructor(
+    private uploadService: UploadService,
+  ) {}
+
+  @Post('upload-sessions')
+  async createSession() {
+    return this.uploadService.createSession()
+  }
+
+  @Get('upload-sessions/:id')
+    async getSession(
+    @Param('id') sessionId: string,
+    ) {
+    return this.uploadService.getSession(
+        sessionId,
+    )
+    }
+
+  @Post('upload-sessions/:id/files')
+  @UseInterceptors(
+    FileInterceptor('file'),
+  )
+  async uploadFile(
+    @Param('id') sessionId: string,
+
+    @UploadedFile()
+    file: Express.Multer.File,
+
+    @Body('relativePath')
+    relativePath: string,
+    ) {
+    if (!file) {
+        throw new BadRequestException(
+        'No file uploaded. Ensure multipart/form-data is correct.',
+        )
+    }
+
+    return this.uploadService.uploadFile(
+        sessionId,
+        file,
+        relativePath,
+    )
+    }
+}
+
+--- FILE: dropbox\backend\src\upload\upload.module.ts ---
+import { Module } from '@nestjs/common'
+
+import { UploadController } from './upload.controller'
+
+import { UploadService } from './upload.service'
+import { ValidationService } from './validation.service'
+
+import { PrismaService } from '../prisma/prisma.service'
+
+import { StorageService } from '../storage/storage.service'
+
+@Module({
+  controllers: [UploadController],
+
+  providers: [
+    UploadService,
+    ValidationService,
+    PrismaService,
+    StorageService,
+  ],
+})
+export class UploadModule {}
+
+--- FILE: dropbox\backend\src\upload\upload.service.ts ---
+import { Injectable } from '@nestjs/common'
+
+import * as path from 'path'
+
+import { PrismaService } from '../prisma/prisma.service'
+import { StorageService } from '../storage/storage.service'
+
+import { ValidationService } from './validation.service'
+
+import {
+  NotFoundException,
+} from '@nestjs/common'
+
+
+
+@Injectable()
+export class UploadService {
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+    private validationService: ValidationService,
+  ) {}
+
+  async createSession() {
+    return this.prisma.uploadSession.create({
+      data: {},
+    })
+  }
+
+  async getSession(
+    sessionId: string,
+    ) {
+    const session =
+        await this.prisma.uploadSession.findUnique({
+        where: {
+            id: sessionId,
+        },
+
+        include: {
+            files: {
+                orderBy: {
+                    relativePath: 'asc',
+                },
+            },
+        },
+        })
+
+    if (!session) {
+        throw new NotFoundException(
+        'Upload session not found',
+        )
+    }
+
+    return session
+    }
+  async uploadFile(
+    sessionId: string,
+    file: Express.Multer.File,
+    relativePath: string,
+  ) {
+
+    await this.prisma.uploadSession.findUniqueOrThrow({
+    where: {
+        id: sessionId,
+    },
+    })
+
+    const session =
+        await this.prisma.uploadSession.findUnique({
+            where: {
+            id: sessionId,
+            },
+        })
+
+        if (!session) {
+        throw new NotFoundException(
+            'Upload session not found',
+        )
+        }
+
+    const extension = path.extname(
+      file.originalname,
+    )
+
+    const validation =
+      this.validationService.validateExtension(
+        extension,
+      )
+
+    const storedPath =
+      await this.storageService.saveFile(
+        sessionId,
+        relativePath,
+        file.buffer,
+      )
+
+    const saved =
+      await this.prisma.fileRecord.create({
+        data: {
+          sessionId,
+
+          originalName:
+            file.originalname,
+
+          relativePath,
+
+          extension,
+
+          storedPath,
+
+          validationState:
+            validation.state,
+
+          validationMessage:
+            validation.message,
+        },
+      })
+
+    return saved
+  }
+}
+
+--- FILE: dropbox\backend\src\upload\validation.service.ts ---
+import { Injectable, OnModuleInit } from '@nestjs/common'
+import * as fs from 'fs'
+import * as path from 'path'
+import Papa from 'papaparse'
+
+@Injectable()
+export class ValidationService implements OnModuleInit {
+  private allowedExtensions: Set<string> = new Set()
+  private cyberExtensions: Set<string> = new Set()
+
+  async onModuleInit() {
+    await this.loadConfigurations()
+  }
+
+  private async loadConfigurations() {
+    const allowedPath = path.join(process.cwd(), 'src/whitelists/AllowedFileTypes.csv')
+    const cyberPath = path.join(process.cwd(), 'src/whitelists/CyberFileTypes.csv')
+
+    // Read files and parse specific columns
+    const allowed = this.parseCsvWithColumn(fs.readFileSync(allowedPath, 'utf-8'), 'Extension')
+    const cyber = this.parseCsvWithColumn(fs.readFileSync(cyberPath, 'utf-8'), 'File Extention')
+
+    // Allowed is everything in AllowedFileTypes
+    this.allowedExtensions = new Set(allowed)
+
+    // Cyber is anything in CyberFileTypes that's NOT in AllowedFileTypes
+    this.cyberExtensions = new Set(
+      cyber.filter((ext) => !this.allowedExtensions.has(ext))
+    )
+  }
+
+  // New helper replacing your old parseCsv method
+    private parseCsvWithColumn(fileContent: string, columnName: string): string[] {
+    const parsed = Papa.parse<Record<string, string>>(fileContent, {
+      header: true,
+      skipEmptyLines: true,
+    })
+
+    // Use flatMap instead of map to split semicolon-separated values
+    return parsed.data
+      .flatMap((row) => {
+        const value = row[columnName];
+        if (!value) return []; // Return empty array so flatMap ignores it
+
+        // Split by semicolon to handle rows like ".doc;.docx"
+        return value.split(';').map((ext) => {
+          const cleaned = ext.trim().toLowerCase();
+          if (!cleaned) return '';
+
+          // Ensures uniform '.ext' format matching your validation logic
+          return cleaned.startsWith('.') ? cleaned : `.${cleaned}`;
+        });
+      })
+      .filter(Boolean); // Removes any empty strings from the final list
+  }
+
+
+  validateExtension(ext: string) {
+    const normalizedExt = ext.toLowerCase()
+
+    // 1. Check if it's in the allowed whitelist
+    if (this.allowedExtensions.has(normalizedExt)) {
+      return {
+        state: 'allowed',
+        message: 'Approved',
+      }
+    }
+
+    // 2. Check if it's in the cyber routing list
+    if (this.cyberExtensions.has(normalizedExt)) {
+      return {
+        state: 'cyber',
+        message: 'Cyber routing required',
+      }
+    }
+
+    // 3. Everything else is blocked (White-list approach)
+    return {
+      state: 'blocked',
+      message: 'Blocked extension',
+    }
+  }
+}
+
+--- FILE: dropbox\backend\src\whitelists\AllowedFileTypes.csv ---
+Type,Extension,Message
+Test,.test,20;30
+AI,.ai,50
+AU,.au,50
+AVI,.avi,50
+BMP,.bmp,50
+C,.c,50
+C++,.cc;.cpp,50
+CAP,.cap,50
+CSS,.css,50
+CSV,.csv,50
+DB,.db,50
+DOC,.doc;.docx;.dotx,20;60
+DT,.dt0;.dt1;.dt2,50
+DWG,.dwg,50
+EPS,.eps,50
+FTB,.ftb,50
+GeoDB,.geodb,50
+GIF,.gif,50
+GIS,.dig,50
+GML,.gml,50
+GZ,.gz;.gzip,50
+HPP,.hpp,50
+HTML,.h,50
+HTML,.html;.htm,50
+ICS,.ics,50
+IPNYB,.ipynb,50
+JAR,.jar,50
+JAVA,.java,50
+JPEG,.j2c;.jpg;.jpeg,50
+JPYNB,.jpynb,50
+JSON,.json,50
+JSONL,.jsonl,50
+KML,.kml,50
+KMZ,.kmz,50
+LAS,.las,50
+LAZ,.laz,50
+MD,.md,50
+MOV,.mov,50
+MPEG,.mp4;.mpeq;.mpg,50
+MPP,.mpp,50
+MXD,.mxd,50
+NESSUS,.nessus,50
+ODF,.odf,50
+ODG,.odg;.otg,50
+ODM,.odm,50
+ODP,.odp;.otp,50
+ODS,.ods;.ots,50
+ODT,.odt;.ott,50
+OTH,.oth,50
+Parquet,.parquet,50
+PDD,.pdd,50
+PDF,.pdf,50
+PNG,.png,50
+POT,.pot;.potx,50
+PPT,.pps;.ppsx;.ppt;.pptx,40
+PS,.ps,50
+PSD,.psd,50
+PY,.py,50
+RAR,.rar,50
+RAW,.raw,50
+RB,.rb,50
+RS,.rs,50
+RTF,.rtf,50
+SAV,.sav,50
+SBN,.sbn,50
+SBX,.sbx,50
+SHP,.shp,50
+SHTML,.shtml; shtm,50
+SPO,.spo,50
+SQL,.sql,50
+TAR,.tar,50
+TGZ,.tgz,50
+TIFF,.tiff;.tif,50
+TXT,.txt,30
+VSD,.vsd,50
+VSS,.vss;.vssx,50
+WAV,.wav,50
+WMA,.wma,50
+WMF,.wmf,50
+WMV,.wmv,50
+WPD,.wpd,50
+WRI,.wri,50
+XBM,.xbm,50
+XLF,.xlf,50
+XLS,.xl;.xls;.xlsx;.xlst,20
+XLW,.xlw,50
+XML,.xml,50
+XSD,.xsd,50
+YAML,.yaml;.yml,50
+
+--- FILE: dropbox\backend\src\whitelists\CyberFileTypes.csv ---
+File Extention,Application,Comments
+.aft,Data Files,
+.asf,Audio/Video,
+.asm,PRO/E & TEAMS,
+.avi,Audio/Video,
+.bat,Executable,
+.bdf,PATRAN/NASTRAN,
+.bin,,
+.bit,CAD,
+.bmp,Image,
+.bzip2,Compressed Files,
+.cat,CATIA,
+.CATDrawing,CATIA,
+.CATPart,CATIA,
+.CATProduct,CATIA,
+.cfm,Web,
+.cgr,CATIA,
+.cpp,Any program that utilizes C++ code,
+.crp,EVMS software COBRA,Report templates/data file
+.crt,web file,
+.css,,Approved by ISSM Jason on 4/13/2022
+.cst,Page Layout files,
+.csv,Misc,
+.ctl,Developer/Data,
+.dat,PATRAN/NASTRAN,
+.db,PATRAN/NASTRAN,
+.dc1,CAD Files,
+.dct,Doors,
+.dfx,HPGL/AutoCAD,
+.div,CATIA,
+.div3,CATIA,
+.div4,CATIA,
+.dlv,CATIA,
+.dlv3,CATIA,
+.dlv4,CATIA,
+.dma,Doors,
+.dmap,PATRAN/NASTRAN,
+.dmp,AMMS,
+.doc,MicroSoft Office Suite,
+.docm,MicroSoft Office Suite,
+.docx,MicroSoft Office Suite,
+.drw,Image,
+.dtd,,Added 4/6/22 by ISSO TF. Approval provided by ISSO TN. 
+.dwg,HPGL/AutoCAD,
+.dxl,Database/Executable,
+.emz,vector image files,
+.eps,Image,
+.exl,Data Files/Developer,
+.exp,,Added 4/6/22 by ISSO TF. Approval provided by ISSO TN. 
+.fig,Image,
+.fmx,AMMS,
+.fsc,Data Files,
+.gem,Developer/Vector Images/Page Layout,
+.gif,Image,
+.gr8,,
+.grv,Data File/XML,
+.gsa,,
+.gz,Compressed Files,
+.gzip,Compressed Files,
+.har,SEER-H data files,
+.hpglz,,
+.html,Misc,
+.idx,PRO/E & TEAMS,
+.igs,CATIA,
+.ini,Settings/Data File,
+.jpg,,
+.js,,
+.llb,,
+.lnk,,
+.log,PRO/E & TEAMS,
+.mat,Matlab,
+.mcd,CAD/Data Files,
+.mcs,,
+.mdb,MicroSoft Office Suite,
+.mez,,
+.mht,,
+.mnu,,
+.mod/ modFEM,CATIA,
+.model,,
+.mp3,Audio/Video,
+.mpd,MicroSoft Office Suite,
+.mpg,Audio/Video,
+.mpj,Data/3D Image Files,
+.mpp,MicroSoft Office Suite,
+.mql,,
+.msg,MicroSoft Office Suite,
+.npz,Compressed Image/Mapping,Per Will Schoellkopf
+.nupkg,Binary; Developer Files/Data Files,
+.op2,PATRAN/NASTRAN,
+.pde,Developer Files/Text,
+.pdf,Misc,
+.plt,HPGL/AutoCAD,
+.ppt,MicroSoft Office Suite,
+.pptx,MicroSoft Office Suite,
+.prc,AMMS,
+.prm,,
+.prt,PRO/E & TEAMS,
+.ps,eMatrix,
+.pbiviz,PowerBI ,Schroeder concurs ok - reviewed all file-extensions.org and google
+.pvz,CAD Files,
+.rdl,,Schroeder concurs ok - reviewed all file-extensions.org and google
+.rpt,,
+.rtf,Misc,
+.sfc,,
+.sld,Raster Image Files/XML,
+.sldd,MATLlab Data,
+.slx,Data Files/Audio Files,
+.sql,,
+.stl,CAD/Web/Data Files,
+.stp,CATIA,
+.tab,Text/Data/GIS,
+.tar,Compressed Files,
+.tci,,
+.tga,Raster Image Files,
+.tgz,,
+.tif,,
+.tor,,
+.trg,,
+.txt,Misc,
+.ui,Developer Files/Text,
+.vi,LabView,
+.vsd,MicroSoft Office Suite,
+.vsdx,vector image files,
+.wma,Audio/Video,
+.wmv,Audio/Video,
+.xls,MicroSoft Office Suite,
+.xlsm,,
+.xlsm,,
+.xlsx,MicroSoft Office Suite,
+.xml,Misc,
+.zip,Compressed Files,
