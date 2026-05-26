@@ -61,10 +61,18 @@ export function UploadQueue() {
         file.validationState === 'cyber',
     )
 
+  const unapprovedQueueItems =
+    uploadQueue.filter(
+      (item) =>
+        item.validationState === 'blocked' ||
+        item.validationState === 'cyber',
+    )
+
   const canTransfer =
     !hasStarted &&
     uploadQueue.length > 0 &&
-    unapprovedFiles.length === 0
+    unapprovedFiles.length === 0 &&
+    unapprovedQueueItems.length === 0
 
   const completedFiles =
     uploadQueue.filter(
@@ -151,11 +159,11 @@ export function UploadQueue() {
           Cancel All Uploads
         </button>
 
-        {unapprovedFiles.length > 0 && (
+        {(unapprovedFiles.length > 0 || unapprovedQueueItems.length > 0) && (
           <div className="flex items-center gap-2 rounded bg-red-900 px-3 py-2 text-sm text-red-100">
             <span>⚠️</span>
             <span>
-              {unapprovedFiles.length} unapproved {unapprovedFiles.length === 1 ? 'file' : 'files'}
+              {unapprovedFiles.length + unapprovedQueueItems.length} unapproved {unapprovedFiles.length + unapprovedQueueItems.length === 1 ? 'file' : 'files'}
             </span>
           </div>
         )}

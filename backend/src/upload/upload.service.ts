@@ -56,6 +56,13 @@ export class UploadService {
 
     return session
     }
+
+  validateExtension(extension: string) {
+    return this.validationService.validateExtension(
+      extension,
+    )
+  }
+
   async uploadFile(
     sessionId: string,
     file: Express.Multer.File,

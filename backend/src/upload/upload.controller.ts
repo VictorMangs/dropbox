@@ -34,6 +34,23 @@ export class UploadController {
     )
     }
 
+  @Post('upload-sessions/:id/validate')
+  async validateFile(
+    @Param('id') sessionId: string,
+
+    @Body('extension') extension: string,
+    ) {
+    if (!extension) {
+      throw new BadRequestException(
+        'Extension is required',
+      )
+    }
+
+    return this.uploadService.validateExtension(
+      extension,
+    )
+    }
+
   @Post('upload-sessions/:id/files')
   @UseInterceptors(
     FileInterceptor('file'),

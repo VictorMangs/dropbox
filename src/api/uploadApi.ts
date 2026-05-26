@@ -98,3 +98,29 @@ export async function getSession(
 
   return response.json()
 }
+
+export async function validateFileExtension(
+  sessionId: string,
+  extension: string,
+) {
+  const response = await fetch(
+    `${API_BASE}/upload-sessions/${sessionId}/validate`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        extension,
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    throw new Error(
+      'Failed to validate file',
+    )
+  }
+
+  return response.json()
+}

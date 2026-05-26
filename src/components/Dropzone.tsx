@@ -2,6 +2,8 @@ import { useDropzone } from 'react-dropzone'
 
 import { useUploadStore } from '../store/uploadStore'
 
+import { createSession } from '../api/uploadApi'
+
 import type {
   UploadQueueItem,
 } from '../types/upload'
@@ -22,35 +24,58 @@ export function Dropzone() {
         state.setUploadQueue,
     )
 
-  const onDrop = (
+  const setSessionId =
+    useUploadStore(
+      (state) =>
+        state.setSessionId,
+    )
+
+  const validateQueuedFiles =
+    useUploadStore(
+      (state) =>
+        state.validateQueuedFiles,
+    )
+
+  const onDrop = async (
     acceptedFiles: File[],
   ) => {
-    const queue:
-      UploadQueueItem[] =
-      acceptedFiles.map(
-        (file) => ({
-          id:
-            crypto.randomUUID(),
+    try {
+      const session =
+        await createSession()
 
-          file,
+      setSessionId(session.id)
 
-          relativePath:
-            file.webkitRelativePath ||
-            file.name,
+      const queue:
+        UploadQueueItem[] =
+        acceptedFiles.map(
+          (file) => ({
+            id:
+              crypto.randomUUID(),
 
-          progress: 0,
+            file,
 
-          status: 'pending',
+            relativePath:
+              file.webkitRelativePath ||
+              file.name,
 
-          priority: 'normal',
+            progress: 0,
 
-          createdAt: new Date().toISOString(),
+            status: 'pending',
 
-          retryCount: 0,
-        }),
-      )
+            priority: 'normal',
 
-    setUploadQueue(queue)
+            createdAt: new Date().toISOString(),
+
+            retryCount: 0,
+          }),
+        )
+
+      setUploadQueue(queue)
+
+      await validateQueuedFiles()
+    } catch (error) {
+      console.error(error)
+    }
   }
 
   const {

@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import type { UploadRecord, UploadQueueItem } from '../types/upload'
 import { clearSessionId, saveSessionId } from '../utils/sessionStorage'
-import { createSession, getSession } from '../api/uploadApi'
+import { createSession, getSession, validateFileExtension } from '../api/uploadApi'
 import { processUploads } from '../services/uploadOrchestrator'
 
 interface UploadStore {
@@ -48,6 +48,8 @@ interface UploadStore {
   cancelAllUploads: () => void
 
   startTransfer: () => Promise<void>
+
+  validateQueuedFiles: () => Promise<void>
 
 }
 
@@ -179,6 +181,49 @@ export const useUploadStore =
           ),
       }
     }),
+
+  validateQueuedFiles: async () => {
+    const state = useUploadStore.getState()
+    
+    if (state.uploadQueue.length === 0 || state.sessionId === null) {
+      return
+    }
+
+    try {
+      state.setLoading(true)
+
+      const validationResults = await Promise.all(
+        state.uploadQueue.map(async (item) => {
+          const extension =
+            item.file.name.substring(
+              item.file.name.lastIndexOf('.')
+            )
+
+          const validation =
+            await validateFileExtension(
+              state.sessionId!,
+              extension,
+            )
+
+          return {
+            id: item.id,
+            updates: {
+              validationState:
+                validation.state,
+            },
+          }
+        })
+      )
+
+      for (const { id, updates } of validationResults) {
+        state.updateQueueItem(id, updates)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      state.setLoading(false)
+    }
+  },
 
   startTransfer: async () => {
     const state = useUploadStore.getState()
