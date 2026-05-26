@@ -135,15 +135,21 @@ export function UploadQueue() {
   return (
     <div className="space-y-4 rounded bg-slate-800 p-4">
       <div className="flex gap-2">
-        {!hasStarted && uploadQueue.length > 0 && (
-          <button
-            onClick={startTransfer}
-            disabled={loading || !canTransfer}
-            className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Starting...' : 'Transfer'}
-          </button>
-        )}
+        <button
+          onClick={startTransfer}
+          disabled={loading || !canTransfer || uploadQueue.length === 0}
+          className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Starting...' : 'Transfer'}
+        </button>
+
+        <button
+          onClick={cancelAllUploads}
+          disabled={activeUploads === 0}
+          className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Cancel All Uploads
+        </button>
 
         {unapprovedFiles.length > 0 && (
           <div className="flex items-center gap-2 rounded bg-red-900 px-3 py-2 text-sm text-red-100">
@@ -152,17 +158,6 @@ export function UploadQueue() {
               {unapprovedFiles.length} unapproved {unapprovedFiles.length === 1 ? 'file' : 'files'}
             </span>
           </div>
-        )}
-
-        {hasStarted && (
-          <button
-            onClick={
-              cancelAllUploads
-            }
-            className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600"
-          >
-            Cancel All Uploads
-          </button>
         )}
       </div>
 
