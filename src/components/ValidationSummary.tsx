@@ -137,7 +137,7 @@ export function ValidationSummary({
               {
                 unapprovedFiles.length
               }{' '}
-              unapproved{' '}
+              problematic{' '}
               {unapprovedFiles.length ===
               1
                 ? 'file'

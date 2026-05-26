@@ -50,7 +50,8 @@ interface UploadStore {
   startTransfer: () => Promise<void>
 
   validateQueuedFiles: () => Promise<void>
-
+  
+  removeUnapprovedFiles: () => void
 }
 
 export const useUploadStore =
@@ -115,48 +116,48 @@ export const useUploadStore =
 					),
 		})),
 		
-		retryQueueItem: (
-			id,
-		) =>
-			set((state) => ({
-				uploadQueue:
-					state.uploadQueue.map(
-						(item) =>
-							item.id === id
-								? {
-										...item,
-										status:
-											'pending',
-										progress: 0,
-										error: undefined,
-									}
-								: item,
-					),
-			})),
+  retryQueueItem: (
+    id,
+  ) =>
+    set((state) => ({
+      uploadQueue:
+        state.uploadQueue.map(
+          (item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  status:
+                    'pending',
+                  progress: 0,
+                  error: undefined,
+                }
+              : item,
+        ),
+    })),
       
     cancelQueueItem: (
-  id,
-) =>
-  set((state) => ({
-    uploadQueue:
-      state.uploadQueue.map(
-        (item) => {
-          if (
-            item.id !== id
-          ) {
-            return item
-          }
+      id,
+    ) =>
+      set((state) => ({
+        uploadQueue:
+          state.uploadQueue.map(
+            (item) => {
+              if (
+                item.id !== id
+              ) {
+                return item
+              }
 
-          item.abortController?.abort()
+              item.abortController?.abort()
 
-          return {
-            ...item,
-            status:
-              'cancelled',
-          }
-        },
-      ),
-  })),
+              return {
+                ...item,
+                status:
+                  'cancelled',
+              }
+            },
+          ),
+      })),
 
   cancelAllUploads: () =>
     set((state) => {
@@ -181,6 +182,14 @@ export const useUploadStore =
           ),
       }
     }),
+
+  removeUnapprovedFiles: () =>
+    set((state) => ({
+      uploadQueue: state.uploadQueue.filter(
+        (item) =>
+          item.validationState !== 'blocked'
+      ),
+    })),
 
   validateQueuedFiles: async () => {
     const state = useUploadStore.getState()

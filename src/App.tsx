@@ -53,8 +53,8 @@ function App() {
     restoreSession()
   }, [])
 
-  const files = useUploadStore(
-    (state) => state.files,
+  const removeUnapprovedFiles = useUploadStore(
+    (state) => state.removeUnapprovedFiles,
   )
 
   const uploadQueue =
@@ -181,12 +181,19 @@ function App() {
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
           <button
             onClick={clearFiles}
             className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
           >
             Clear
+          </button>
+
+          <button
+            onClick={removeUnapprovedFiles}
+            className="rounded bg-slate-700 px-4 py-2 hover:bg-slate-600"
+          >
+            Remove All Blocked Files
           </button>
         </div>
 
