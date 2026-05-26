@@ -1,4 +1,0 @@
-$kind: collection
-description: Postman collection for the NestJS Upload API. Covers session creation and file upload scenarios including allowed, blocked, cyber-routed, missing field, and invalid session cases.
-variables:
-  sessionId: ""
