@@ -10,50 +10,58 @@ import { useEffect } from 'react'
 
 import { getSession } from './api/uploadApi'
 
-import { getSessionId, clearSessionId } from './utils/sessionStorage'
+import {
+  getSessionId,
+  clearSessionId,
+} from './utils/sessionStorage'
 
 import { UploadQueue } from './components/UploadQueue'
 
 function App() {
-
   useEffect(() => {
-		async function restoreSession() {
-			const storedSessionId =
-				getSessionId()
+    async function restoreSession() {
+      const storedSessionId =
+        getSessionId()
 
-			if (!storedSessionId) {
-				return
-			}
+      if (!storedSessionId) {
+        return
+      }
 
-			try {
-				setLoading(true)
+      try {
+        setLoading(true)
 
-				const session =
-					await getSession(
-						storedSessionId,
-					)
+        const session =
+          await getSession(
+            storedSessionId,
+          )
 
-				setSessionId(session.id)
+        setSessionId(session.id)
 
-				setFiles(session.files)
-			} catch (error) {
-				console.error(
-					'Failed to restore session',
-					error,
-				)
+        setFiles(session.files)
+      } catch (error) {
+        console.error(
+          'Failed to restore session',
+          error,
+        )
 
-				clearSessionId()
-			} finally {
-				setLoading(false)
-			}
-		}
+        clearSessionId()
+      } finally {
+        setLoading(false)
+      }
+    }
 
-		restoreSession()
-	}, [])
+    restoreSession()
+  }, [])
 
   const files = useUploadStore(
     (state) => state.files,
   )
+
+  const uploadQueue =
+    useUploadStore(
+      (state) =>
+        state.uploadQueue,
+    )
 
   const clearFiles = useUploadStore(
     (state) => state.clearFiles,
@@ -63,26 +71,81 @@ function App() {
     (state) => state.loading,
   )
 
-  const tree = buildFileTree(files)
-
-  const unapprovedFiles =
-    files.filter(
-      (file) =>
-        file.validationState === 'blocked' ||
-        file.validationState === 'cyber',
-    )
-
   const setFiles = useUploadStore(
     (state) => state.setFiles,
+  )
+
+  const setSessionId =
+    useUploadStore(
+      (state) =>
+        state.setSessionId,
     )
 
-  const setSessionId = useUploadStore(
-    (state) =>
-    state.setSessionId,
-  )
-  const setLoading = useUploadStore(
-    (state) =>
-    state.setLoading,
+  const setLoading =
+    useUploadStore(
+      (state) =>
+        state.setLoading,
+    )
+
+  const hasStarted =
+    uploadQueue.some(
+      (item) =>
+        item.status ===
+          'uploading' ||
+        item.status ===
+          'completed' ||
+        item.status ===
+          'failed',
+    )
+
+  const unapprovedQueueItems =
+    uploadQueue.filter(
+      (item) =>
+        item.validationState ===
+          'blocked' ||
+        item.validationState ===
+          'cyber',
+    )
+
+  const canTransfer =
+    !hasStarted &&
+    uploadQueue.length > 0 &&
+    unapprovedQueueItems.length === 0
+
+  const tree = buildFileTree(
+    uploadQueue.map((item) => ({
+      id: item.id,
+
+      sessionId: '',
+
+      originalName:
+        item.file.name,
+
+      relativePath:
+        item.relativePath,
+
+      extension:
+        item.file.name.substring(
+          item.file.name.lastIndexOf(
+            '.',
+          ),
+        ),
+
+      storedPath: '',
+
+      validationState:
+        item.validationState ??
+        'allowed',
+
+      validationMessage: '',
+
+      messageId: 0,
+
+      createdAt:
+        item.createdAt,
+
+      size: item.file.size,
+    })),
   )
 
   return (
@@ -94,12 +157,22 @@ function App() {
           </h1>
 
           <p className="mt-2 text-slate-400">
-            React migration prototype for upload
-            validation.
+            React migration prototype
+            for upload validation.
           </p>
         </div>
 
         <Dropzone />
+
+        <ValidationSummary
+          uploadQueue={
+            uploadQueue
+          }
+          canTransfer={
+            canTransfer
+          }
+        />
+
         <UploadQueue />
 
         {loading && (
@@ -117,9 +190,7 @@ function App() {
           </button>
         </div>
 
-        <ValidationSummary files={files} />
-
-        <FileTree tree={tree} unapprovedFiles={unapprovedFiles} />
+        <FileTree tree={tree} />
       </div>
     </div>
   )
