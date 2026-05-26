@@ -137,7 +137,7 @@ function App() {
         item.validationState ??
         'allowed',
 
-      validationMessage: '',
+      validationMessage: item.validationMessage ?? '',
 
       messageId: 0,
 

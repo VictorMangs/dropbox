@@ -58,9 +58,17 @@ export class UploadService {
     }
 
   validateExtension(extension: string) {
-    return this.validationService.validateExtension(
-      extension,
-    )
+    const result =
+      this.validationService.validateExtension(extension)
+
+    const message =
+      this.messagesService.getMessage(result.messageId)
+    
+    return {
+      state: result.state,
+      messageId: result.messageId,
+      message: message?.message ?? 'Unknown message',
+    }
   }
 
   async uploadFile(

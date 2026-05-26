@@ -61,6 +61,8 @@ export interface UploadQueueItem {
   retryCount: number
 
   validationState?: ValidationState
+
+  validationMessage?: string
 }
 
 export interface UploadSession {

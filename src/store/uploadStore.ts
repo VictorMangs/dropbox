@@ -210,6 +210,7 @@ export const useUploadStore =
             updates: {
               validationState:
                 validation.state,
+                validationMessage: validation.message,
             },
           }
         })
