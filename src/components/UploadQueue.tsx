@@ -7,6 +7,12 @@ export function UploadQueue() {
         state.uploadQueue,
     )
 
+  const loading =
+    useUploadStore(
+      (state) =>
+        state.loading,
+    )
+
   const updateQueueItem =
     useUploadStore(
       (state) =>
@@ -25,8 +31,22 @@ export function UploadQueue() {
         state.cancelAllUploads,
     )
 
+  const startTransfer =
+    useUploadStore(
+      (state) =>
+        state.startTransfer,
+    )
+
   const totalFiles =
     uploadQueue.length
+
+  const hasStarted =
+    uploadQueue.some(
+      (item) =>
+        item.status === 'uploading' ||
+        item.status === 'completed' ||
+        item.status === 'failed',
+    )
 
   const completedFiles =
     uploadQueue.filter(
@@ -97,6 +117,16 @@ export function UploadQueue() {
   return (
     <div className="space-y-4 rounded bg-slate-800 p-4">
       <div className="flex gap-2">
+        {!hasStarted && uploadQueue.length > 0 && (
+          <button
+            onClick={startTransfer}
+            disabled={loading}
+            className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Starting...' : 'Transfer'}
+          </button>
+        )}
+
         <button
           onClick={
             cancelAllUploads

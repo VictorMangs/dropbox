@@ -1,7 +1,9 @@
 import { create } from 'zustand'
 
 import type { UploadRecord, UploadQueueItem } from '../types/upload'
-import { clearSessionId } from '../utils/sessionStorage'
+import { clearSessionId, saveSessionId } from '../utils/sessionStorage'
+import { createSession } from '../api/uploadApi'
+import { processUploads } from '../services/uploadOrchestrator'
 
 interface UploadStore {
   sessionId: string | null
@@ -44,6 +46,8 @@ interface UploadStore {
   ) => void
 
   cancelAllUploads: () => void
+
+  startTransfer: () => Promise<void>
 
 }
 
@@ -175,5 +179,34 @@ export const useUploadStore =
           ),
       }
     }),
+
+  startTransfer: async () => {
+    const state = useUploadStore.getState()
+    
+    if (state.uploadQueue.length === 0) {
+      return
+    }
+
+    try {
+      state.setLoading(true)
+
+      const session =
+        await createSession()
+
+      state.setSessionId(session.id)
+      saveSessionId(session.id)
+
+      await processUploads({
+        queue: state.uploadQueue,
+        sessionId: session.id,
+        updateQueueItem:
+          state.updateQueueItem,
+      })
+    } catch (error) {
+      console.error(error)
+    } finally {
+      state.setLoading(false)
+    }
+  },
     
   }))
