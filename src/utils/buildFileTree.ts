@@ -65,8 +65,8 @@ export function buildFileTree(
       }
 
       if (isFile) {
-       existing.validation =
-        uploadFile.validationState
+        existing.validation =
+          uploadFile.validationState
 
         existing.validationMessage =
           uploadFile.validationMessage

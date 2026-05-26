@@ -1,5 +1,4 @@
 import { useState } from 'react'
-
 import type { TreeNode } from '../types/upload'
 
 import { ValidationBadge } from './ValidationBadge'
@@ -11,17 +10,33 @@ interface Props {
 
 export function FileNode({ node }: Props) {
   const [expanded, setExpanded] = useState(true)
+
   const [hovered, setHovered] = useState(false)
+
+  const [position, setPosition] = useState({
+    x: 0,
+    y: 0,
+  })
 
   const isFolder = node.type === 'folder'
 
   return (
-    <div className="ml-4 mt-2">
+    <div className="ml-4 mt-2 relative">
       <div
-        className="relative flex items-center gap-2"
-        onMouseEnter={() =>
+        className="flex items-center gap-2"
+        onMouseEnter={(e) => {
           setHovered(true)
-        }
+          setPosition({
+            x: e.clientX,
+            y: e.clientY,
+          })
+        }}
+        onMouseMove={(e) => {
+          setPosition({
+            x: e.clientX,
+            y: e.clientY,
+          })
+        }}
         onMouseLeave={() =>
           setHovered(false)
         }
@@ -50,13 +65,14 @@ export function FileNode({ node }: Props) {
         <ValidationBadge
           state={node.validation}
         />
-
-        {hovered && (
-          <TreeTooltip
-            node={node}
-          />
-        )}
       </div>
+
+      {hovered && (
+        <TreeTooltip
+          node={node}
+          position={position}
+        />
+      )}
 
       {expanded &&
         node.children?.map((child) => (
