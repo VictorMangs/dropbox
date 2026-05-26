@@ -65,6 +65,13 @@ function App() {
 
   const tree = buildFileTree(files)
 
+  const unapprovedFiles =
+    files.filter(
+      (file) =>
+        file.validationState === 'blocked' ||
+        file.validationState === 'cyber',
+    )
+
   const setFiles = useUploadStore(
     (state) => state.setFiles,
     )
@@ -112,7 +119,7 @@ function App() {
 
         <ValidationSummary files={files} />
 
-        <FileTree tree={tree} />
+        <FileTree tree={tree} unapprovedFiles={unapprovedFiles} />
       </div>
     </div>
   )

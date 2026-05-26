@@ -48,6 +48,24 @@ export function UploadQueue() {
         item.status === 'failed',
     )
 
+  const files =
+    useUploadStore(
+      (state) =>
+        state.files,
+    )
+
+  const unapprovedFiles =
+    files.filter(
+      (file) =>
+        file.validationState === 'blocked' ||
+        file.validationState === 'cyber',
+    )
+
+  const canTransfer =
+    !hasStarted &&
+    uploadQueue.length > 0 &&
+    unapprovedFiles.length === 0
+
   const completedFiles =
     uploadQueue.filter(
       (item) =>
@@ -120,21 +138,32 @@ export function UploadQueue() {
         {!hasStarted && uploadQueue.length > 0 && (
           <button
             onClick={startTransfer}
-            disabled={loading}
+            disabled={loading || !canTransfer}
             className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Starting...' : 'Transfer'}
           </button>
         )}
 
-        <button
-          onClick={
-            cancelAllUploads
-          }
-          className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600"
-        >
-          Cancel All Uploads
-        </button>
+        {unapprovedFiles.length > 0 && (
+          <div className="flex items-center gap-2 rounded bg-red-900 px-3 py-2 text-sm text-red-100">
+            <span>⚠️</span>
+            <span>
+              {unapprovedFiles.length} unapproved {unapprovedFiles.length === 1 ? 'file' : 'files'}
+            </span>
+          </div>
+        )}
+
+        {hasStarted && (
+          <button
+            onClick={
+              cancelAllUploads
+            }
+            className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600"
+          >
+            Cancel All Uploads
+          </button>
+        )}
       </div>
 
       <div className="space-y-1">

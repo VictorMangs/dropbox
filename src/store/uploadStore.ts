@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 import type { UploadRecord, UploadQueueItem } from '../types/upload'
 import { clearSessionId, saveSessionId } from '../utils/sessionStorage'
-import { createSession } from '../api/uploadApi'
+import { createSession, getSession } from '../api/uploadApi'
 import { processUploads } from '../services/uploadOrchestrator'
 
 interface UploadStore {
@@ -202,6 +202,13 @@ export const useUploadStore =
         updateQueueItem:
           state.updateQueueItem,
       })
+
+      const updatedSession =
+        await getSession(session.id)
+
+      state.setFiles(
+        updatedSession.files,
+      )
     } catch (error) {
       console.error(error)
     } finally {
