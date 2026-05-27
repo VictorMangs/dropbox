@@ -96,14 +96,6 @@ function App() {
 
         <Dropzone />
 
-        <ValidationSummary uploadQueue={uploadQueue} />
-
-        <UploadQueue />
-
-        {loading && (
-          <div className="rounded bg-blue-600 p-4">Uploading files...</div>
-        )}
-
         <div className="flex justify-end gap-2">
           <button
             onClick={clearFiles}
@@ -119,6 +111,15 @@ function App() {
             Remove All Blocked Files
           </button>
         </div>
+
+        <ValidationSummary uploadQueue={uploadQueue} />
+        
+        <UploadQueue />
+
+
+        {loading && (
+          <div className="rounded bg-blue-600 p-4">Uploading files...</div>
+        )}
 
         <FileTree tree={tree} />
       </div>
