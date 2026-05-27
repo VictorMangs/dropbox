@@ -35,7 +35,7 @@ export function UploadQueue() {
 
   const canTransfer = !hasBlocked && hasAllowed && !hasCyber;
 
-  const canCyberTransfer = !hasBlocked && hasCyber;
+  const canCyberTransfer = !hasBlocked && (hasCyber || hasAllowed);
 
   const completedFiles = uploadQueue.filter(
     (item) => item.status === "completed",

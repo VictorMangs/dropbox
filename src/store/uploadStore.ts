@@ -74,10 +74,17 @@ export const useUploadStore = create<UploadStore>((set) => ({
   clearFiles: () => {
     clearSessionId();
 
-    set(() => ({
-      sessionId: null,
-      files: [],
-    }));
+    set((state) => {
+      state.uploadQueue.forEach((item) => {
+        item.abortController?.abort();
+      });
+
+      return {
+        sessionId: null,
+        files: [],
+        uploadQueue: [],
+      };
+    });
   },
 
   setUploadQueue: (uploadQueue) =>
@@ -89,7 +96,7 @@ export const useUploadStore = create<UploadStore>((set) => ({
     set({
       uploadQueue: [],
       loading: false,
-      sessionId: undefined,
+      sessionId: null,
     });
   },
 
@@ -172,9 +179,7 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
       const validationResults = await Promise.all(
         state.uploadQueue.map(async (item) => {
-          const extension = item.file.name.substring(
-            item.file.name.lastIndexOf("."),
-          );
+          const extension = "." + item.file.name.split(".").pop()?.toLowerCase();
 
           const validation = await validateFileExtension(
             state.sessionId!,
@@ -228,9 +233,10 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      window.alert(
-        "File upload is successfully queued and will be processed shortly.",
-      );
+      queueMicrotask(() => {
+        console.info("File upload is successfully queued and will be processed shortly.");
+      });
+
       state.resetTransferState();
     } catch (error) {
       console.error(error);
@@ -241,11 +247,6 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
   startCyberTransfer: async () => {
     const state = useUploadStore.getState();
-
-    const cyberFiles = state.uploadQueue.filter(
-      (item) =>
-        item.validationState === "cyber" || item.validationState === "allowed",
-    );
 
     // Prevent transfer if blocked files exist
     const hasBlocked = state.uploadQueue.some(
@@ -258,9 +259,14 @@ export const useUploadStore = create<UploadStore>((set) => ({
       return;
     }
 
-    if (cyberFiles.length === 0) {
-      return;
-    }
+   const cyberFiles = state.uploadQueue.filter(
+      (item) =>
+        item.validationState === "cyber" ||
+        item.validationState === "allowed",
+    );
+
+    if (cyberFiles.length === 0) return;
+    
 
     try {
       state.setLoading(true);
@@ -283,10 +289,11 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
       state.setFiles(updatedSession.files);
       await new Promise((resolve) => setTimeout(resolve, 500));
+      
+      queueMicrotask(() => {
+        console.info("Cyber upload is successfully queued and will be processed shortly.");
+      });
 
-      window.alert(
-        "Cyber upload is successfully queued and will be processed shortly.",
-      );
       state.resetTransferState();
     } catch (error) {
       console.error(error);

@@ -22,7 +22,7 @@ function Start-Database {
 
 function Start-AppServer {
     Write-Host "Starting application in development mode..."
-    npm run start:dev
+    Start-Process powershell -ArgumentList "-NoExit", "-Command npm run start:dev"
 }
 
 # Execution Logic based on Flags

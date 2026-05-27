@@ -32,8 +32,8 @@ export function TreeTooltip({ node, position }: Props) {
 
   const padding = 12;
 
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
+  const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 0;
+  const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 0;
 
   // Detect overflow risk
   const wouldOverflowRight = position.x + size.width + padding > viewportWidth;

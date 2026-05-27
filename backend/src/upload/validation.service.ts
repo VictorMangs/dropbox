@@ -43,7 +43,7 @@ export class ValidationService implements OnModuleInit {
     return rows
       .flatMap((row) => {
         const value = row[columnName];
-        if (!value) return [];
+        if (!value || typeof value !== "string") return [];
 
         return value.split(';').map((ext: string) => {
           const cleaned = ext.trim().toLowerCase();

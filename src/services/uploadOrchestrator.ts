@@ -133,11 +133,19 @@ export async function processUploads({
 
   let currentIndex = 0;
 
-  async function worker() {
-    while (currentIndex < pendingQueue.length) {
-      const item = pendingQueue[currentIndex];
+  function getNextIndex() {
+    return currentIndex++;
+  }
 
-      currentIndex += 1;
+  async function worker() {
+    while (true) {
+      const index = getNextIndex();
+
+      if (index >= pendingQueue.length) {
+        return;
+      }
+
+      const item = pendingQueue[index];
 
       await processSingleUpload(item, sessionId, updateQueueItem);
     }

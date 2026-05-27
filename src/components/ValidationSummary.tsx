@@ -18,7 +18,10 @@ export function ValidationSummary({ uploadQueue }: Props) {
       continue;
     }
 
-    summary[item.validationState] += 1;
+    const state = item.validationState;
+    if (state === "allowed" || state === "cyber" || state === "blocked") {
+      summary[state] += 1;
+    }
   }
 
   const blockedFiles = uploadQueue.filter(

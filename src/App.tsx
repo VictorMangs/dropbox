@@ -15,6 +15,16 @@ import { getSessionId, clearSessionId } from "./utils/sessionStorage";
 import { UploadQueue } from "./components/UploadQueue";
 
 function App() {
+  const removeUnapprovedFiles = useUploadStore(
+    (state) => state.removeUnapprovedFiles,
+  );
+  const uploadQueue = useUploadStore((state) => state.uploadQueue);
+  const clearFiles = useUploadStore((state) => state.clearFiles);
+  const loading = useUploadStore((state) => state.loading);
+  const setFiles = useUploadStore((state) => state.setFiles);
+  const setSessionId = useUploadStore((state) => state.setSessionId);
+  const setLoading = useUploadStore((state) => state.setLoading);
+  
   useEffect(() => {
     async function restoreSession() {
       const storedSessionId = getSessionId();
@@ -27,6 +37,10 @@ function App() {
         setLoading(true);
 
         const session = await getSession(storedSessionId);
+        
+        if (!session?.id) {
+          throw new Error("Invalid session response");
+        }
 
         setSessionId(session.id);
 
@@ -43,27 +57,11 @@ function App() {
     restoreSession();
   }, []);
 
-  const removeUnapprovedFiles = useUploadStore(
-    (state) => state.removeUnapprovedFiles,
-  );
-
-  const uploadQueue = useUploadStore((state) => state.uploadQueue);
-
-  const clearFiles = useUploadStore((state) => state.clearFiles);
-
-  const loading = useUploadStore((state) => state.loading);
-
-  const setFiles = useUploadStore((state) => state.setFiles);
-
-  const setSessionId = useUploadStore((state) => state.setSessionId);
-
-  const setLoading = useUploadStore((state) => state.setLoading);
-
   const tree = buildFileTree(
     uploadQueue.map((item) => ({
       id: item.id,
-
-      sessionId: "",
+      
+      sessionId: "", 
 
       originalName: item.file.name,
 
