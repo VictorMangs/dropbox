@@ -18,7 +18,7 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @Post('upload-sessions')
-  async createSession() {
+  async createSession(): Promise<any> {
     return this.uploadService.createSession();
   }
 

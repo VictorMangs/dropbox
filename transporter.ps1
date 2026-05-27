@@ -5,10 +5,10 @@ $OutputFile = "project_context.txt"
 if (Test-Path $OutputFile) { Remove-Item $OutputFile }
 
 # Define the folders to scan (relative to current directory)
-$TargetFolders = @("src", "backend/src")
+$TargetFolders = @("backend/src")
 
 # Extensions to exclude (images, lockfiles, etc.)
-$ExcludeExtensions = @(".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".pdf", ".zip", ".tar", ".gz", ".lock", ".map")
+$ExcludeExtensions = @(".png", ".jpg", ".jpeg", ".gif", ".ico", ".svg", ".pdf", ".zip", ".tar", ".gz", ".lock", ".map",".csv")
 
 # Files or folders to explicitly skip (safety check)
 $ExcludeNames = @("node_modules", ".git", ".next", "dist", "build", "package-lock.json", "pnpm-lock.yaml", "yarn.lock", "storage", "test")

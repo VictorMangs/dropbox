@@ -24,12 +24,12 @@ export class ValidationService implements OnModuleInit {
 
     // Read files and parse specific columns
     const allowed = this.parseCsvWithColumn(
-      fs.readFileSync(allowedPath, 'utf-8'),
+      await fs.promises.readFile(allowedPath, 'utf-8'),
       'Extension',
     );
     const cyber = this.parseCsvWithColumn(
-      fs.readFileSync(cyberPath, 'utf-8'),
-      'File Extention',
+      await fs.promises.readFile(cyberPath, 'utf-8'),
+      'File Extension',
     );
 
     // Allowed is everything in AllowedFileTypes
