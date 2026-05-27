@@ -1,97 +1,61 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import * as fs from 'fs';
 import * as path from 'path';
-import Papa from 'papaparse';
+import { loadCsv } from '../common/csv.util';
 
 @Injectable()
 export class ValidationService implements OnModuleInit {
-  private allowedExtensions: Set<string> = new Set();
-  private cyberExtensions: Set<string> = new Set();
+  private allowedExtensions = new Set<string>();
+  private cyberExtensions = new Set<string>();
 
   async onModuleInit() {
-    await this.loadConfigurations();
-  }
-
-  private async loadConfigurations() {
     const allowedPath = path.join(
       process.cwd(),
       'src/whitelists/AllowedFileTypes.csv',
     );
+
     const cyberPath = path.join(
       process.cwd(),
       'src/whitelists/CyberFileTypes.csv',
     );
 
-    // Read files and parse specific columns
-    const allowed = this.parseCsvWithColumn(
-      await fs.promises.readFile(allowedPath, 'utf-8'),
-      'Extension',
-    );
-    const cyber = this.parseCsvWithColumn(
-      await fs.promises.readFile(cyberPath, 'utf-8'),
-      'File Extension',
-    );
+    const allowedRows = await loadCsv(allowedPath);
+    const cyberRows = await loadCsv(cyberPath);
 
-    // Allowed is everything in AllowedFileTypes
+    const allowed = this.parseColumn(allowedRows, 'Extension');
+    const cyber = this.parseColumn(cyberRows, 'File Extension');
+
     this.allowedExtensions = new Set(allowed);
 
-    // Cyber is anything in CyberFileTypes that's NOT in AllowedFileTypes
     this.cyberExtensions = new Set(
       cyber.filter((ext) => !this.allowedExtensions.has(ext)),
     );
   }
 
-  // New helper replacing your old parseCsv method
-  private parseCsvWithColumn(
-    fileContent: string,
-    columnName: string,
-  ): string[] {
-    const parsed = Papa.parse<Record<string, string>>(fileContent, {
-      header: true,
-      skipEmptyLines: true,
-    });
-
-    // Use flatMap instead of map to split semicolon-separated values
-    return parsed.data
+  private parseColumn(rows: any[], columnName: string): string[] {
+    return rows
       .flatMap((row) => {
         const value = row[columnName];
-        if (!value) return []; // Return empty array so flatMap ignores it
+        if (!value) return [];
 
-        // Split by semicolon to handle rows like ".doc;.docx"
-        return value.split(';').map((ext) => {
+        return value.split(';').map((ext: string) => {
           const cleaned = ext.trim().toLowerCase();
-          if (!cleaned) return '';
-
-          // Ensures uniform '.ext' format matching your validation logic
           return cleaned.startsWith('.') ? cleaned : `.${cleaned}`;
         });
       })
-      .filter(Boolean); // Removes any empty strings from the final list
+      .filter(Boolean);
   }
 
   validateExtension(ext: string) {
     const normalizedExt = ext.toLowerCase();
 
-    // 1. Check if it's in the allowed whitelist
     if (this.allowedExtensions.has(normalizedExt)) {
-      return {
-        state: 'allowed',
-        messageId: 50,
-      };
+      return { state: 'allowed', messageId: 50 };
     }
 
-    // 2. Check if it's in the cyber routing list
     if (this.cyberExtensions.has(normalizedExt)) {
-      return {
-        state: 'cyber',
-        messageId: 70,
-      };
+      return { state: 'cyber', messageId: 70 };
     }
 
-    // 3. Everything else is blocked (White-list approach)
-    return {
-      state: 'blocked',
-      messageId: 0,
-    };
+    return { state: 'blocked', messageId: 0 };
   }
 }

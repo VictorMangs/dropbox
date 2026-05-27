@@ -1,7 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import Papa from 'papaparse';
 import { Injectable, OnModuleInit } from '@nestjs/common';
+import * as path from 'path';
+import { loadCsv } from '../common/csv.util';
 
 export interface MessageRule {
   id: number;
@@ -15,16 +14,14 @@ export class MessagesService implements OnModuleInit {
   private messages = new Map<number, MessageRule>();
 
   async onModuleInit() {
-    const filePath = path.join(process.cwd(), 'src/whitelists/Messages.csv');
+    const filePath = path.join(
+      process.cwd(),
+      'src/whitelists/Messages.csv',
+    );
 
-    const file = fs.readFileSync(filePath, 'utf-8');
+    const rows = await loadCsv(filePath);
 
-    const parsed = Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-    });
-
-    for (const row of parsed.data as any[]) {
+    for (const row of rows) {
       const id = Number(row.ID);
 
       this.messages.set(id, {
