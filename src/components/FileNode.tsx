@@ -20,10 +20,15 @@ export function FileNode({ node }: Props) {
 
   const isFolder = node.type === 'folder'
 
+  const cyberStyles =
+  node.validation === 'cyber'
+    ? 'border border-cyan-500 rounded px-2 py-1 bg-cyan-900/20'
+    : ''
+
   return (
     <div className="ml-4 mt-2 relative">
       <div
-        className="flex items-center gap-2"
+        className={`flex items-center gap-2 ${cyberStyles}`}
         onMouseEnter={(e) => {
           setHovered(true)
           setPosition({

@@ -87,30 +87,7 @@ function App() {
         state.setLoading,
     )
 
-  const hasStarted =
-    uploadQueue.some(
-      (item) =>
-        item.status ===
-          'uploading' ||
-        item.status ===
-          'completed' ||
-        item.status ===
-          'failed',
-    )
-
-  const unapprovedQueueItems =
-    uploadQueue.filter(
-      (item) =>
-        item.validationState ===
-          'blocked' ||
-        item.validationState ===
-          'cyber',
-    )
-
-  const canTransfer =
-    !hasStarted &&
-    uploadQueue.length > 0 &&
-    unapprovedQueueItems.length === 0
+  
 
   const tree = buildFileTree(
     uploadQueue.map((item) => ({
@@ -167,9 +144,6 @@ function App() {
         <ValidationSummary
           uploadQueue={
             uploadQueue
-          }
-          canTransfer={
-            canTransfer
           }
         />
 

@@ -19,7 +19,7 @@ export function ValidationBadge({
         'rounded px-2 py-1 text-xs font-semibold',
         {
           'bg-green-600': state === 'allowed',
-          'bg-yellow-600': state === 'cyber',
+          'bg-cyan-600 text-white': state === 'cyber',
           'bg-red-600': state === 'blocked',
         },
       )}

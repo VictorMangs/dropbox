@@ -7,12 +7,10 @@ import { ValidationBadge } from './ValidationBadge'
 interface Props {
   uploadQueue: UploadQueueItem[]
 
-  canTransfer: boolean
 }
 
 export function ValidationSummary({
   uploadQueue,
-  canTransfer,
 }: Props) {
   const summary = {
     allowed: 0,
@@ -32,13 +30,31 @@ export function ValidationSummary({
     ] += 1
   }
 
-  const unapprovedFiles =
+  const blockedFiles =
     uploadQueue.filter(
       (item) =>
         item.validationState ===
-          'blocked' ||
+        'blocked',
+    )
+
+  const cyberFiles =
+    uploadQueue.filter(
+      (item) =>
         item.validationState ===
-          'cyber',
+        'cyber',
+    )
+  const hasBlocked =
+    uploadQueue.some(
+      (item) =>
+        item.validationState ===
+        'blocked',
+    )
+
+  const hasCyber =
+    uploadQueue.some(
+      (item) =>
+        item.validationState ===
+        'cyber',
     )
 
   const validationStatus =
@@ -50,21 +66,29 @@ export function ValidationSummary({
           className:
             'bg-slate-700',
         }
-      : canTransfer
+      : hasBlocked
         ? {
-            label:
-              'Ready To Transfer',
-
-            className:
-              'bg-green-700',
-          }
-        : {
             label:
               'Transfer Blocked',
 
             className:
               'bg-red-700',
           }
+        : hasCyber
+          ? {
+              label:
+                'Cyber Transfer Required',
+
+              className:
+                'bg-cyan-700',
+            }
+          : {
+              label:
+                'Ready To Transfer',
+
+              className:
+                'bg-green-700',
+            }
 
   return (
     <div className="space-y-4">
@@ -103,7 +127,7 @@ export function ValidationSummary({
             </div>
           </div>
 
-          <div className="rounded bg-yellow-600 p-4">
+          <div className="rounded border border-cyan-400 bg-cyan-900/40 p-4">
             <div className="text-sm">
               Cyber
             </div>
@@ -127,45 +151,66 @@ export function ValidationSummary({
         </div>
       </div>
 
-      {unapprovedFiles.length >
-        0 && (
+      {blockedFiles.length > 0 && (
         <div className="rounded border border-red-700 bg-red-900/20 p-4">
           <div className="mb-3 flex items-center gap-2 font-semibold text-red-200">
-            <span>⚠️</span>
+            <span>⛔</span>
 
             <span>
-              {
-                unapprovedFiles.length
-              }{' '}
-              problematic{' '}
-              {unapprovedFiles.length ===
-              1
+              {blockedFiles.length} blocked{' '}
+              {blockedFiles.length === 1
                 ? 'file'
                 : 'files'}
             </span>
           </div>
 
           <div className="space-y-2">
-            {unapprovedFiles.map(
-              (item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded bg-slate-900/50 px-3 py-2 text-sm"
-                >
-                  <span className="truncate text-slate-300">
-                    {
-                      item.relativePath
-                    }
-                  </span>
+            {blockedFiles.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded bg-slate-900/50 px-3 py-2 text-sm"
+              >
+                <span className="truncate text-slate-300">
+                  {item.relativePath}
+                </span>
 
-                  <ValidationBadge
-                    state={
-                      item.validationState
-                    }
-                  />
-                </div>
-              ),
-            )}
+                <ValidationBadge
+                  state={item.validationState}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {cyberFiles.length > 0 && (
+        <div className="rounded border border-cyan-700 bg-cyan-900/20 p-4">
+          <div className="mb-3 flex items-center gap-2 font-semibold text-cyan-200">
+            <span>🛡️</span>
+
+            <span>
+              {cyberFiles.length} cyber-routed{' '}
+              {cyberFiles.length === 1
+                ? 'file'
+                : 'files'}
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {cyberFiles.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded bg-slate-900/50 px-3 py-2 text-sm"
+              >
+                <span className="truncate text-slate-300">
+                  {item.relativePath}
+                </span>
+
+                <ValidationBadge
+                  state={item.validationState}
+                />
+              </div>
+            ))}
           </div>
         </div>
       )}

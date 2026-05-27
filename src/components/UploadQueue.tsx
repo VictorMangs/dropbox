@@ -40,25 +40,48 @@ export function UploadQueue() {
   const totalFiles =
     uploadQueue.length
 
-  const hasStarted =
-    uploadQueue.some(
-      (item) =>
-        item.status === 'uploading' ||
-        item.status === 'completed' ||
-        item.status === 'failed',
+  const startCyberTransfer =
+    useUploadStore(
+      (state) =>
+        state.startCyberTransfer,
     )
 
-  const unapprovedQueueItems =
-    uploadQueue.filter(
+  const hasBlocked =
+    uploadQueue.some(
       (item) =>
-        item.validationState === 'blocked' ||
-        item.validationState === 'cyber',
+        item.validationState ===
+        'blocked',
+    )
+
+  const hasCyber =
+    uploadQueue.some(
+      (item) =>
+        item.validationState ===
+        'cyber',
+    )
+
+  const hasAllowed =
+    uploadQueue.some(
+      (item) =>
+        item.validationState ===
+        'allowed',
+    )
+
+  const hasActiveTransfer =
+    uploadQueue.some(
+      (item) =>
+        item.status ===
+        'uploading',
     )
 
   const canTransfer =
-    !hasStarted &&
-    uploadQueue.length > 0 &&
-    unapprovedQueueItems.length === 0
+    !hasBlocked &&
+    hasAllowed &&
+    !hasCyber
+
+  const canCyberTransfer =
+    !hasBlocked &&
+    hasCyber
 
   const completedFiles =
     uploadQueue.filter(
@@ -131,16 +154,40 @@ export function UploadQueue() {
       <div className="flex gap-2">
         <button
           onClick={startTransfer}
-          disabled={loading || !canTransfer || uploadQueue.length === 0}
-          className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={
+            loading ||
+            hasActiveTransfer ||
+            !canTransfer
+          }
+          className="rounded bg-green-700 px-3 py-2 text-sm hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? 'Starting...' : 'Transfer'}
+          {loading
+            ? 'Starting...'
+            : 'Transfer'}
         </button>
 
         <button
-          onClick={cancelAllUploads}
-          disabled={activeUploads === 0}
-          className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={
+            startCyberTransfer
+          }
+          disabled={
+            loading ||
+            hasActiveTransfer ||
+            !canCyberTransfer
+          }
+          className="rounded bg-cyan-700 px-3 py-2 text-sm hover:bg-cyan-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Cyber Transfer
+        </button>
+
+        <button
+          onClick={
+            cancelAllUploads
+          }
+          disabled={
+            activeUploads === 0
+          }
+          className="rounded bg-red-700 px-3 py-2 text-sm hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           Cancel All Uploads
         </button>

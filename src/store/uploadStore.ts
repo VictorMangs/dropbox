@@ -49,9 +49,13 @@ interface UploadStore {
 
   startTransfer: () => Promise<void>
 
+  startCyberTransfer: () => Promise<void>
+
   validateQueuedFiles: () => Promise<void>
   
   removeUnapprovedFiles: () => void
+
+  resetTransferState: () => void
 }
 
 export const useUploadStore =
@@ -99,6 +103,15 @@ export const useUploadStore =
 				uploadQueue,
 			})),
     
+    resetTransferState:
+      () => {
+        set({
+          uploadQueue: [],
+          loading: false,
+          sessionId: undefined,
+        })
+      },
+
 		updateQueueItem: (
 			id,
 			updates,
@@ -264,6 +277,94 @@ export const useUploadStore =
       state.setFiles(
         updatedSession.files,
       )
+      
+      await new Promise(
+        (resolve) =>
+          setTimeout(resolve, 500),
+      )
+
+      window.alert(
+        'File upload is successfully queued and will be processed shortly.',
+      )
+      state.resetTransferState()
+
+    } catch (error) {
+      console.error(error)
+    } finally {
+      state.setLoading(false)
+    }
+  },
+
+  startCyberTransfer: async () => {
+    const state = useUploadStore.getState()
+
+    const cyberFiles =
+      state.uploadQueue.filter(
+        (item) =>
+          item.validationState === 'cyber' || item.validationState === 'allowed',
+      )
+
+    // Prevent transfer if blocked files exist
+    const hasBlocked =
+      state.uploadQueue.some(
+        (item) =>
+          item.validationState === 'blocked',
+      )
+
+    if (hasBlocked) {
+      console.warn(
+        'Blocked files present',
+      )
+
+      return
+    }
+
+    if (cyberFiles.length === 0) {
+      return
+    }
+
+    try {
+      state.setLoading(true)
+
+      const session =
+        await createSession()
+
+      state.setSessionId(
+        session.id,
+      )
+
+      saveSessionId(
+        session.id,
+      )
+
+      await processUploads({
+        queue: cyberFiles,
+
+        sessionId:
+          session.id,
+
+        updateQueueItem:
+          state.updateQueueItem,
+      })
+
+      const updatedSession =
+        await getSession(
+          session.id,
+        )
+
+      state.setFiles(
+        updatedSession.files,
+      )
+      await new Promise(
+        (resolve) =>
+          setTimeout(resolve, 500),
+      )
+      
+      window.alert(
+        'Cyber upload is successfully queued and will be processed shortly.',
+      )
+      state.resetTransferState()
+
     } catch (error) {
       console.error(error)
     } finally {
