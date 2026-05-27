@@ -46,7 +46,7 @@ export class ValidationService implements OnModuleInit {
         if (!value) return [];
 
         return value.split(';').map((ext: string) => {
-          const cleaned = ext.trim().toLocaleLowerCase();
+          const cleaned = ext.trim().toLowerCase();
           return cleaned.startsWith('.') ? cleaned : `.${cleaned}`;
         });
       })
