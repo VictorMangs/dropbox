@@ -21,6 +21,10 @@ export class MessagesService implements OnModuleInit {
 
     const rows = await loadCsv(filePath);
 
+    if (!rows?.length) {
+      throw new Error(`Messages CSV failed to load: ${filePath}`);
+    }
+
     for (const row of rows) {
       const id = Number(row.ID);
 

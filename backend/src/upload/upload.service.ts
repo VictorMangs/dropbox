@@ -46,16 +46,18 @@ export class UploadService {
     });
   }
 
-  validateExtension(extension: string) {
-    const result = this.validationService.validateExtension(extension);
-
-    const message = this.messagesService.getMessage(result.messageId);
+  private resolveValidation(extension: string) {
+    const validation = this.validationService.validateExtension(extension);
+    const message = this.messagesService.getMessage(validation.messageId);
 
     return {
-      state: result.state,
-      messageId: result.messageId,
+      ...validation,
       message: message?.message ?? 'Unknown message',
     };
+  }
+
+  validateExtension(extension: string) {
+    return this.resolveValidation(extension);
   }
 
   async uploadFile(
@@ -63,17 +65,13 @@ export class UploadService {
     file: Express.Multer.File,
     relativePath: string,
   ): Promise<any> {
-    await this.prisma.uploadSession.findUniqueOrThrow({
-      where: {
-        id: sessionId,
-      },
+    const session = await this.prisma.uploadSession.findUniqueOrThrow({
+      where: { id: sessionId },
     });
 
     const extension = path.extname(file.originalname).toLowerCase();
 
-    const validation = this.validationService.validateExtension(extension);
-
-    const message = this.messagesService.getMessage(validation.messageId);
+    const validation = this.resolveValidation(extension);
 
     const storedPath = await this.storageService.saveFile(
       sessionId,
@@ -95,7 +93,7 @@ export class UploadService {
 
         validationState: validation.state,
 
-        validationMessage: message?.message ?? 'Unknown message',
+        validationMessage: validation.message ?? 'Unknown message',
       },
     });
   }

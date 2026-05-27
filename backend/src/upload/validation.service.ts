@@ -21,6 +21,14 @@ export class ValidationService implements OnModuleInit {
     const allowedRows = await loadCsv(allowedPath);
     const cyberRows = await loadCsv(cyberPath);
 
+    if (!allowedRows?.length) {
+      throw new Error(`AllowedFileTypes CSV file failed to load: ${allowedPath}`);
+    }
+
+    if (!cyberRows?.length) {
+      throw new Error(`cyberFileTypes CSV file failed to load: ${cyberPath}`);
+    }
+
     const allowed = this.parseColumn(allowedRows, 'Extension');
     const cyber = this.parseColumn(cyberRows, 'File Extension');
 
@@ -38,7 +46,7 @@ export class ValidationService implements OnModuleInit {
         if (!value) return [];
 
         return value.split(';').map((ext: string) => {
-          const cleaned = ext.trim().toLowerCase();
+          const cleaned = ext.trim().toLocaleLowerCase();
           return cleaned.startsWith('.') ? cleaned : `.${cleaned}`;
         });
       })
