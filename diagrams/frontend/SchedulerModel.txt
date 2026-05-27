@@ -1,0 +1,22 @@
+                    processUploads()
+                             │
+                             ▼
+                 Sort By Priority + Aging
+                             │
+                             ▼
+                Determine Dynamic Concurrency
+                             │
+          ┌──────────────────┼──────────────────┐
+          ▼                  ▼                  ▼
+
+      Worker 1           Worker 2           Worker N
+          │                  │                  │
+          ▼                  ▼                  ▼
+
+   processSingleUpload() per file
+          │
+          ▼
+   uploadFile()
+          │
+          ▼
+ Retry / Cancel / Complete / Fail

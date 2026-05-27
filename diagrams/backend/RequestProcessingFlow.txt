@@ -1,0 +1,21 @@
+Frontend Request
+        │
+        ▼
+UploadController
+        │
+        ▼
+UploadService
+        │
+        ├───────────────┬──────────────────┬────────────────┐
+        ▼               ▼                  ▼                ▼
+
+ValidationService   MessagesService   StorageService   PrismaService
+        │               │                  │                │
+        ▼               ▼                  ▼                ▼
+
+CSV Rules        Message Lookup     File Persistence   Database Writes
+        │               │                  │                │
+        └───────────────┴──────────────────┴────────────────┘
+                                │
+                                ▼
+                        HTTP Response

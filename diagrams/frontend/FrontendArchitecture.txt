@@ -1,0 +1,63 @@
+┌─────────────────────────────────────────────────────────────┐
+│                         USER BROWSER                        │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                        React Frontend                       │
+│                                                             │
+│  App.tsx                                                    │
+│  ────────────────────────────────────────────────────────   │
+│  • Main composition root                                    │
+│  • Session restore                                          │
+│  • Layout orchestration                                     │
+│  • Connects UI ↔ Zustand ↔ API                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+               ┌──────────────┼──────────────┐
+               ▼              ▼              ▼
+
+┌─────────────────────┐ ┌──────────────────────┐ ┌──────────────────────┐
+│   UI Components     │ │    Zustand Store     │ │      API Layer       │
+│                     │ │   uploadStore.ts     │ │    uploadApi.ts      │
+├─────────────────────┤ ├──────────────────────┤ ├──────────────────────┤
+│ Dropzone            │ │ • Global app state   │ │ • createSession()    │
+│ UploadQueue         │ │ • Upload queue       │ │ • uploadFile()       │
+│ ValidationSummary   │ │ • Transfer logic     │ │ • getSession()       │
+│ FileTree            │ │ • Validation logic   │ │ • validateExtension()│
+│ FileNode            │ │ • Queue management   │ │                      │
+│ TreeTooltip         │ │ • Session handling   │ │ Axios + Fetch        │
+│ ValidationBadge     │ │ • Cancellation       │ │ Progress + Abort     │
+└─────────────────────┘ └──────────────────────┘ └──────────────────────┘
+               │                    │                      │
+               │                    ▼                      │
+               │     ┌──────────────────────────────┐      │
+               │     │   Upload Orchestrator        │      │
+               │     │ uploadOrchestrator.ts        │      │
+               │     ├──────────────────────────────┤      │
+               │     │ • Concurrency control        │      │
+               │     │ • Retry handling             │      │
+               │     │ • Priority scheduling        │      │
+               │     │ • Worker pool execution      │      │
+               │     │ • Progress callbacks         │      │
+               │     └──────────────────────────────┘      │
+               │                    │                      │
+               └────────────────────┼──────────────────────┘
+                                    │
+                                    ▼
+                    ┌──────────────────────────┐
+                    │      Backend API         │
+                    │                          │
+                    │ /upload-sessions         │
+                    │ /files                   │
+                    │ /validate                │
+                    └──────────────────────────┘
+                                    │
+                                    ▼
+                    ┌──────────────────────────┐
+                    │    Persistent Storage    │
+                    │                          │
+                    │ • Upload sessions        │
+                    │ • File metadata          │
+                    │ • Validation rules       │
+                    └──────────────────────────┘

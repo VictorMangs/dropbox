@@ -1,0 +1,16 @@
+Messages.csv
+      │
+      ▼
+MessagesService.onModuleInit()
+      │
+      ▼
+Parse CSV Rows
+      │
+      ▼
+Map<number, MessageRule>
+      │
+      ▼
+messageId Lookup
+      │
+      ▼
+Human-readable Validation Message

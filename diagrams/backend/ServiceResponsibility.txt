@@ -1,0 +1,21 @@
+┌─────────────────────────────┐
+│        UploadService        │
+├─────────────────────────────┤
+│ • Main orchestration layer  │
+│ • Session lifecycle         │
+│ • Upload workflow           │
+│ • Validation coordination   │
+│ • Metadata persistence      │
+└─────────────────────────────┘
+               │
+     ┌─────────┼─────────┬──────────────┐
+     ▼         ▼         ▼              ▼
+
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│Validation│ │ Messages │ │ Storage  │ │ Prisma   │
+│ Service  │ │ Service  │ │ Service  │ │ Service  │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+     │             │             │             │
+     ▼             ▼             ▼             ▼
+
+CSV Rules     Message CSV    File System    Database

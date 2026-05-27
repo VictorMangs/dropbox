@@ -1,0 +1,35 @@
+POST /upload-sessions/:id/files
+                │
+                ▼
+        FileInterceptor
+      (Multer middleware)
+                │
+                ▼
+        UploadController
+                │
+                ▼
+        UploadService
+                │
+                ├──────────────┐
+                ▼              ▼
+
+     Resolve Validation     Save File
+                │              │
+                ▼              ▼
+
+       ValidationService   StorageService
+                │              │
+                ▼              ▼
+
+      allowed/cyber/etc   Persist binary
+                │              │
+                └──────┬───────┘
+                       ▼
+
+               Prisma FileRecord
+                       │
+                       ▼
+                 Database Write
+                       │
+                       ▼
+                  API Response

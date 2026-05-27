@@ -1,0 +1,46 @@
+User Drops Folder
+        │
+        ▼
+Dropzone.tsx
+        │
+        ▼
+createSession()
+        │
+        ▼
+Build UploadQueueItem[]
+        │
+        ▼
+uploadStore.setUploadQueue()
+        │
+        ▼
+validateQueuedFiles()
+        │
+        ▼
+Backend Validation API
+        │
+        ▼
+Validation Results Returned
+        │
+        ▼
+ValidationSummary Updates
+        │
+        ▼
+User Starts Transfer
+        │
+        ▼
+uploadOrchestrator.processUploads()
+        │
+        ▼
+Concurrent Upload Workers
+        │
+        ▼
+uploadFile()
+        │
+        ▼
+Backend Receives Files
+        │
+        ▼
+Progress + Completion Updates
+        │
+        ▼
+UploadQueue + FileTree Refresh

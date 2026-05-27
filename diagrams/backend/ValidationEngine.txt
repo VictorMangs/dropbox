@@ -1,0 +1,29 @@
+Application Startup
+        │
+        ▼
+ValidationService.onModuleInit()
+        │
+        ▼
+Load CSV Files
+        │
+        ├───────────────────────────────┐
+        ▼                               ▼
+
+AllowedFileTypes.csv          CyberFileTypes.csv
+        │                               │
+        ▼                               ▼
+
+Parse + Normalize Extensions
+        │
+        ▼
+Build In-Memory Sets
+        │
+        ▼
+allowedExtensions : Set<string>
+cyberExtensions   : Set<string>
+        │
+        ▼
+Runtime Validation
+        │
+        ▼
+allowed / cyber / blocked

@@ -1,0 +1,25 @@
+                    ┌────────────────────┐
+                    │   uploadStore.ts   │
+                    └────────────────────┘
+                               │
+      ┌────────────────────────┼────────────────────────┐
+      ▼                        ▼                        ▼
+
+┌──────────────┐      ┌────────────────┐      ┌────────────────┐
+│ sessionId    │      │ uploadQueue    │      │ files          │
+│              │      │                │      │                │
+│ Backend      │      │ Runtime upload │      │ Persisted      │
+│ session      │      │ execution      │      │ server records │
+└──────────────┘      └────────────────┘      └────────────────┘
+                               │
+                               ▼
+                    ┌────────────────────┐
+                    │ Queue Item State   │
+                    ├────────────────────┤
+                    │ • progress         │
+                    │ • status           │
+                    │ • validationState  │
+                    │ • retryCount       │
+                    │ • priority         │
+                    │ • abortController  │
+                    └────────────────────┘

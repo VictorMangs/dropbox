@@ -1,0 +1,15 @@
+┌────────────────────────────────────────────┐
+│            UploadController                │
+├────────────────────────────────────────────┤
+│ POST   /upload-sessions                    │
+│        Create upload session               │
+│                                            │
+│ GET    /upload-sessions/:id                │
+│        Retrieve session + files            │
+│                                            │
+│ POST   /upload-sessions/:id/validate       │
+│        Validate file extension             │
+│                                            │
+│ POST   /upload-sessions/:id/files          │
+│        Upload file                         │
+└────────────────────────────────────────────┘

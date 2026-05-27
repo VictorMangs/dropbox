@@ -1,0 +1,16 @@
+┌────────────────────────────┐
+│       PrismaService        │
+├────────────────────────────┤
+│ Extends PrismaClient       │
+│ • Auto connect             │
+│ • Auto disconnect          │
+│ • Lifecycle integration    │
+└────────────────────────────┘
+               │
+               ▼
+┌────────────────────────────┐
+│         Database           │
+├────────────────────────────┤
+│ uploadSession              │
+│ fileRecord                 │
+└────────────────────────────┘

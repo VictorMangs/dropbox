@@ -1,34 +1,27 @@
-Phase 1: Validation metadata enrichment
-Add:
-  validation messages
-  counts
-  tooltip metadata
-  folder aggregate metadata
+# Done
+  - Separate Basic UI vs orchestration
+  - Add Centralized state management
+  - Add Scalable upload worker model
+  - Add Abort/cancellation support
+  - Add Priority-aware scheduling
+  - Add Backend-driven validation
+  - Add Folder hierarchy preservation
+  - Add type modeling (TypeScript)
+  - Add validation messages (counts/tooltip/preview)
+  - Add Clear and Remove Blocked Buttons
+  - Add Tree Syncronization
+  - Incorporate Cyber queue and visuals
 
-Phase 2: Tree interaction system
-Add:
-  hover tooltips
-  counts
-  expandable metadata
-  severity icons
+---
 
-Phase 3: Blocked file operations
-Add:
-  remove blocked files button
-  remove all blocked
-  queue cleanup
-  tree synchronization
+# ToDo 
 
-Phase 4: Cyber routing workflow
-Add:
-  cyber queue
-  export list
-  separate visualization
-  optional download manifest
-
-Phase 5: ZIP inspection
-Add:
-  archive inspection service
-  nested validation
-  recursive archive visualization
-  inherited validation severity
+  - Tighten up mvp code
+  - Add Zip extraction service
+  - Add Dedicated notification/toast system
+  - Add Queue persistence across refreshes
+  - Add RBAC/authentication
+  - Add Chunked uploads
+  - Add Upload batching
+  - Add Resume support
+  - Add Validation caching
