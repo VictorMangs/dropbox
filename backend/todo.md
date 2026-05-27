@@ -13,6 +13,7 @@
 
 # ToDo (overlaps a bit with frontend)
 
+  - Tighten up mvp code
   - Add content-based file inspection (powerpoints/zips)
   - Add Authentication + RBAC
   - Add Audit logging

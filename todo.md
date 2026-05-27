@@ -17,11 +17,10 @@
 # ToDo 
 
   - Tighten up mvp code
-  - Add Zip extraction service
-  - Add Dedicated notification/toast system
-  - Add Queue persistence across refreshes
+  - (Optional) Change from folder only to file/folder hybrid uploading
+  - Add zip extraction service
+  - Add dedicated notification/toast system
+  - Add queue persistence across refreshes
   - Add RBAC/authentication
-  - Add Chunked uploads
-  - Add Upload batching
-  - Add Resume support
-  - Add Validation caching
+  - Add chunked uploads and upload batching
+  - Add validation caching
