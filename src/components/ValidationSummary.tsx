@@ -1,152 +1,100 @@
-import type {
-  UploadQueueItem,
-} from '../types/upload'
+import type { UploadQueueItem } from "../types/upload";
 
-import { ValidationBadge } from './ValidationBadge'
+import { ValidationBadge } from "./ValidationBadge";
 
 interface Props {
-  uploadQueue: UploadQueueItem[]
-
+  uploadQueue: UploadQueueItem[];
 }
 
-export function ValidationSummary({
-  uploadQueue,
-}: Props) {
+export function ValidationSummary({ uploadQueue }: Props) {
   const summary = {
     allowed: 0,
     cyber: 0,
     blocked: 0,
-  }
+  };
 
   for (const item of uploadQueue) {
-    if (
-      !item.validationState
-    ) {
-      continue
+    if (!item.validationState) {
+      continue;
     }
 
-    summary[
-      item.validationState
-    ] += 1
+    summary[item.validationState] += 1;
   }
 
-  const blockedFiles =
-    uploadQueue.filter(
-      (item) =>
-        item.validationState ===
-        'blocked',
-    )
+  const blockedFiles = uploadQueue.filter(
+    (item) => item.validationState === "blocked",
+  );
 
-  const cyberFiles =
-    uploadQueue.filter(
-      (item) =>
-        item.validationState ===
-        'cyber',
-    )
-  const hasBlocked =
-    uploadQueue.some(
-      (item) =>
-        item.validationState ===
-        'blocked',
-    )
+  const cyberFiles = uploadQueue.filter(
+    (item) => item.validationState === "cyber",
+  );
+  const hasBlocked = uploadQueue.some(
+    (item) => item.validationState === "blocked",
+  );
 
-  const hasCyber =
-    uploadQueue.some(
-      (item) =>
-        item.validationState ===
-        'cyber',
-    )
+  const hasCyber = uploadQueue.some((item) => item.validationState === "cyber");
 
   const validationStatus =
     uploadQueue.length === 0
       ? {
-          label:
-            'Ready To Transfer',
+          label: "Ready To Transfer",
 
-          className:
-            'bg-slate-700',
+          className: "bg-slate-700",
         }
       : hasBlocked
         ? {
-            label:
-              'Transfer Blocked',
+            label: "Transfer Blocked",
 
-            className:
-              'bg-red-700',
+            className: "bg-red-700",
           }
         : hasCyber
           ? {
-              label:
-                'Cyber Transfer Required',
+              label: "Cyber Transfer Required",
 
-              className:
-                'bg-cyan-700',
+              className: "bg-cyan-700",
             }
           : {
-              label:
-                'Ready To Transfer',
+              label: "Ready To Transfer",
 
-              className:
-                'bg-green-700',
-            }
+              className: "bg-green-700",
+            };
 
   return (
     <div className="space-y-4">
       <div className="rounded border border-slate-700 bg-slate-800 p-4">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold">
-              Validation Feedback
-            </h2>
+            <h2 className="text-lg font-semibold">Validation Feedback</h2>
 
             <p className="text-sm text-slate-400">
-              Files validated before
-              transfer
+              Files validated before transfer
             </p>
           </div>
 
           <div
             className={`rounded px-3 py-1 text-sm ${validationStatus.className}`}
           >
-            {
-              validationStatus.label
-            }
+            {validationStatus.label}
           </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded bg-green-600 p-4">
-            <div className="text-sm">
-              Allowed
-            </div>
+            <div className="text-sm">Allowed</div>
 
-            <div className="text-2xl font-bold">
-              {
-                summary.allowed
-              }
-            </div>
+            <div className="text-2xl font-bold">{summary.allowed}</div>
           </div>
 
           <div className="rounded border border-cyan-400 bg-cyan-900/40 p-4">
-            <div className="text-sm">
-              Cyber
-            </div>
+            <div className="text-sm">Cyber</div>
 
-            <div className="text-2xl font-bold">
-              {summary.cyber}
-            </div>
+            <div className="text-2xl font-bold">{summary.cyber}</div>
           </div>
 
           <div className="rounded bg-red-600 p-4">
-            <div className="text-sm">
-              Blocked
-            </div>
+            <div className="text-sm">Blocked</div>
 
-            <div className="text-2xl font-bold">
-              {
-                summary.blocked
-              }
-            </div>
+            <div className="text-2xl font-bold">{summary.blocked}</div>
           </div>
         </div>
       </div>
@@ -157,10 +105,8 @@ export function ValidationSummary({
             <span>⛔</span>
 
             <span>
-              {blockedFiles.length} blocked{' '}
-              {blockedFiles.length === 1
-                ? 'file'
-                : 'files'}
+              {blockedFiles.length} blocked{" "}
+              {blockedFiles.length === 1 ? "file" : "files"}
             </span>
           </div>
 
@@ -174,9 +120,7 @@ export function ValidationSummary({
                   {item.relativePath}
                 </span>
 
-                <ValidationBadge
-                  state={item.validationState}
-                />
+                <ValidationBadge state={item.validationState} />
               </div>
             ))}
           </div>
@@ -189,10 +133,8 @@ export function ValidationSummary({
             <span>🛡️</span>
 
             <span>
-              {cyberFiles.length} cyber-routed{' '}
-              {cyberFiles.length === 1
-                ? 'file'
-                : 'files'}
+              {cyberFiles.length} cyber-routed{" "}
+              {cyberFiles.length === 1 ? "file" : "files"}
             </span>
           </div>
 
@@ -206,14 +148,12 @@ export function ValidationSummary({
                   {item.relativePath}
                 </span>
 
-                <ValidationBadge
-                  state={item.validationState}
-                />
+                <ValidationBadge state={item.validationState} />
               </div>
             ))}
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

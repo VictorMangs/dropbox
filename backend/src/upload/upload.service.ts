@@ -1,19 +1,15 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common';
 
-import * as path from 'path'
+import * as path from 'path';
 
-import { PrismaService } from '../prisma/prisma.service'
-import { StorageService } from '../storage/storage.service'
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
-import { ValidationService } from './validation.service'
+import { ValidationService } from './validation.service';
 
-import { MessagesService } from '../messages/messages.service'
+import { MessagesService } from '../messages/messages.service';
 
-import {
-  NotFoundException,
-} from '@nestjs/common'
-
-
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class UploadService {
@@ -27,48 +23,41 @@ export class UploadService {
   async createSession() {
     return this.prisma.uploadSession.create({
       data: {},
-    })
+    });
   }
 
-  async getSession(
-    sessionId: string,
-    ) {
-    const session =
-        await this.prisma.uploadSession.findUnique({
-        where: {
-            id: sessionId,
-        },
+  async getSession(sessionId: string) {
+    const session = await this.prisma.uploadSession.findUnique({
+      where: {
+        id: sessionId,
+      },
 
-        include: {
-            files: {
-                orderBy: {
-                    relativePath: 'asc',
-                },
-            },
+      include: {
+        files: {
+          orderBy: {
+            relativePath: 'asc',
+          },
         },
-        })
+      },
+    });
 
     if (!session) {
-        throw new NotFoundException(
-        'Upload session not found',
-        )
+      throw new NotFoundException('Upload session not found');
     }
 
-    return session
-    }
+    return session;
+  }
 
   validateExtension(extension: string) {
-    const result =
-      this.validationService.validateExtension(extension)
+    const result = this.validationService.validateExtension(extension);
 
-    const message =
-      this.messagesService.getMessage(result.messageId)
-    
+    const message = this.messagesService.getMessage(result.messageId);
+
     return {
       state: result.state,
       messageId: result.messageId,
       message: message?.message ?? 'Unknown message',
-    }
+    };
   }
 
   async uploadFile(
@@ -76,69 +65,52 @@ export class UploadService {
     file: Express.Multer.File,
     relativePath: string,
   ) {
-
     await this.prisma.uploadSession.findUniqueOrThrow({
-    where: {
+      where: {
         id: sessionId,
-    },
-    })
+      },
+    });
 
-    const session =
-        await this.prisma.uploadSession.findUnique({
-            where: {
-            id: sessionId,
-            },
-        })
+    const session = await this.prisma.uploadSession.findUnique({
+      where: {
+        id: sessionId,
+      },
+    });
 
-        if (!session) {
-        throw new NotFoundException(
-            'Upload session not found',
-        )
-        }
+    if (!session) {
+      throw new NotFoundException('Upload session not found');
+    }
 
-    const extension = path.extname(
-      file.originalname,
-    )
+    const extension = path.extname(file.originalname);
 
-    const validation =
-      this.validationService.validateExtension(
-        extension,
-      )
-    
-    const message =
-      this.messagesService.getMessage(
-        validation.messageId,
-      )
+    const validation = this.validationService.validateExtension(extension);
 
-    const storedPath =
-      await this.storageService.saveFile(
+    const message = this.messagesService.getMessage(validation.messageId);
+
+    const storedPath = await this.storageService.saveFile(
+      sessionId,
+      relativePath,
+      file.buffer,
+    );
+
+    const saved = await this.prisma.fileRecord.create({
+      data: {
         sessionId,
+
+        originalName: file.originalname,
+
         relativePath,
-        file.buffer,
-      )
 
-    const saved =
-      await this.prisma.fileRecord.create({
-        data: {
-          sessionId,
+        extension,
 
-          originalName:
-            file.originalname,
+        storedPath,
 
-          relativePath,
+        validationState: validation.state,
 
-          extension,
+        validationMessage: message?.message || 'Unknown message',
+      },
+    });
 
-          storedPath,
-
-          validationState:
-            validation.state,
-
-          validationMessage:
-            message?.message || 'Unknown message',
-        },
-      })
-
-    return saved
+    return saved;
   }
 }

@@ -1,6 +1,6 @@
-import { Module } from '@nestjs/common'
+import { Module } from '@nestjs/common';
 
-import { UploadModule } from './upload/upload.module'
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [UploadModule],

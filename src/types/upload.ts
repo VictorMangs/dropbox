@@ -1,100 +1,94 @@
-export type ValidationState =
-  | 'allowed'
-  | 'cyber'
-  | 'blocked'
+export type ValidationState = "allowed" | "cyber" | "blocked";
 
 export type UploadStatus =
-  | 'pending'
-  | 'uploading'
-  | 'completed'
-  | 'failed'
-  | 'cancelled'
+  | "pending"
+  | "uploading"
+  | "completed"
+  | "failed"
+  | "cancelled";
 
-export type UploadPriority =
-  | 'high'
-  | 'normal'
-  | 'low'
-  
+export type UploadPriority = "high" | "normal" | "low";
+
 export interface UploadRecord {
-  id: string
+  id: string;
 
-  sessionId: string
+  sessionId: string;
 
-  originalName: string
+  originalName: string;
 
-  relativePath: string
+  relativePath: string;
 
-  extension: string
+  extension: string;
 
-  storedPath: string
+  storedPath: string;
 
-  validationState: ValidationState
+  validationState: ValidationState;
 
-  validationMessage: string
+  validationMessage: string;
 
-  messageId: number
+  messageId: number;
 
-  createdAt: string
+  createdAt: string;
 
-  size: number
+  size: number;
 }
 
 export interface UploadQueueItem {
-  id: string
+  id: string;
 
-  file: File
+  file: File;
 
-  relativePath: string
+  relativePath: string;
 
-  progress: number
+  progress: number;
 
-  status: UploadStatus
+  status: UploadStatus;
 
-  error?: string
+  error?: string;
 
-  abortController?: AbortController
+  abortController?: AbortController;
 
-  priority: UploadPriority
+  priority: UploadPriority;
 
-  createdAt: string
+  createdAt: string;
 
-  retryCount: number
+  retryCount: number;
 
-  validationState?: ValidationState
+  validationState?: ValidationState;
 
-  validationMessage?: string
+  validationMessage?: string;
 }
 
 export interface UploadSession {
-  id: string
+  id: string;
 
-  createdAt: string
+  createdAt: string;
 
-  files: UploadRecord[]
+  files: UploadRecord[];
 }
 
 export interface TreeNode {
-  name: string
+  name: string;
 
-  path: string
+  path: string;
 
-  type: 'file' | 'folder'
+  type: "file" | "folder";
 
-  validation?: ValidationState
+  validation?: ValidationState;
 
-  validationMessage?: string
+  validationMessage?: string;
 
-  extension?: string
+  extension?: string;
 
-  size?: number
+  size?: number;
 
-  blockedCount?: number
+  blockedCount?: number;
 
-  cyberCount?: number
+  cyberCount?: number;
 
-  allowedCount?: number
+  allowedCount?: number;
 
-  fileCount?: number
+  fileCount?: number;
 
-  children?: TreeNode[]
+  children?: TreeNode[];
 }

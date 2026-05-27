@@ -1,55 +1,54 @@
-import { createPortal } from 'react-dom'
-import { useLayoutEffect, useRef, useState } from 'react'
-import type { TreeNode } from '../types/upload'
+import { createPortal } from "react-dom";
+import { useLayoutEffect, useRef, useState } from "react";
+import type { TreeNode } from "../types/upload";
 
 interface Props {
-  node: TreeNode
+  node: TreeNode;
   position: {
-    x: number
-    y: number
-  }
+    x: number;
+    y: number;
+  };
 }
 
 export function TreeTooltip({ node, position }: Props) {
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null);
 
   const [size, setSize] = useState({
     width: 0,
     height: 0,
-  })
+  });
 
   // Measure tooltip after render
   useLayoutEffect(() => {
-    if (!ref.current) return
+    if (!ref.current) return;
 
-    const rect = ref.current.getBoundingClientRect()
+    const rect = ref.current.getBoundingClientRect();
 
     setSize({
       width: rect.width,
       height: rect.height,
-    })
-  }, [node])
+    });
+  }, [node]);
 
-  const padding = 12
+  const padding = 12;
 
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
 
   // Detect overflow risk
-  const wouldOverflowRight =
-    position.x + size.width + padding > viewportWidth
+  const wouldOverflowRight = position.x + size.width + padding > viewportWidth;
 
   const wouldOverflowBottom =
-    position.y + size.height + padding > viewportHeight
+    position.y + size.height + padding > viewportHeight;
 
   // Flip logic (preferred UX improvement)
   const left = wouldOverflowRight
     ? position.x - size.width - padding
-    : position.x + padding
+    : position.x + padding;
 
   const top = wouldOverflowBottom
     ? position.y - size.height - padding
-    : position.y + padding
+    : position.y + padding;
 
   return createPortal(
     <div
@@ -60,30 +59,22 @@ export function TreeTooltip({ node, position }: Props) {
         top: Math.max(padding, top),
       }}
     >
-      <div className="font-semibold text-white">
-        {node.name}
-      </div>
+      <div className="font-semibold text-white">{node.name}</div>
 
       <div className="mt-2 space-y-1 text-slate-300">
         <div>Type: {node.type}</div>
 
         <div>Status: {node.validation}</div>
 
-        {node.validationMessage && (
-          <div>
-            Message: {node.validationMessage}
-          </div>
-        )}
+        {node.validationMessage && <div>Message: {node.validationMessage}</div>}
 
-        {node.extension && (
-          <div>Extension: {node.extension}</div>
-        )}
+        {node.extension && <div>Extension: {node.extension}</div>}
 
-        {typeof node.size === 'number' && (
+        {typeof node.size === "number" && (
           <div>Size: {formatSize(node.size)}</div>
         )}
 
-        {node.type === 'folder' && (
+        {node.type === "folder" && (
           <>
             <div>Files: {node.fileCount}</div>
             <div>Allowed: {node.allowedCount}</div>
@@ -93,12 +84,12 @@ export function TreeTooltip({ node, position }: Props) {
         )}
       </div>
     </div>,
-    document.body
-  )
+    document.body,
+  );
 }
 
 function formatSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }

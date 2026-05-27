@@ -1,55 +1,34 @@
-import {
-  Injectable,
-} from '@nestjs/common'
+import { Injectable } from '@nestjs/common';
 
-import * as fs from 'fs/promises'
-import * as path from 'path'
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 @Injectable()
 export class StorageService {
-  private readonly basePath =
-    path.join(process.cwd(), 'storage')
+  private readonly basePath = path.join(process.cwd(), 'storage');
 
-  async saveFile(
-    sessionId: string,
-    relativePath: string,
-    buffer: Buffer,
-  ) {
-    const intendedBase = path.join(
-      this.basePath,
-      'uploads',
-      sessionId,
-    )
+  async saveFile(sessionId: string, relativePath: string, buffer: Buffer) {
+    const intendedBase = path.join(this.basePath, 'uploads', sessionId);
 
-    const fullPath = path.resolve(
-      intendedBase,
-      relativePath,
-    )
+    const fullPath = path.resolve(intendedBase, relativePath);
 
-    const resolvedBase = path.resolve(
-      intendedBase,
-    )
+    const resolvedBase = path.resolve(intendedBase);
 
     if (
-      !fullPath.startsWith(
-        resolvedBase + path.sep,
-      ) &&
+      !fullPath.startsWith(resolvedBase + path.sep) &&
       fullPath !== resolvedBase
     ) {
-      throw new Error(
-        'Invalid relative path',
-      )
+      throw new Error('Invalid relative path');
     }
 
-    const directory =
-      path.dirname(fullPath)
+    const directory = path.dirname(fullPath);
 
     await fs.mkdir(directory, {
       recursive: true,
-    })
+    });
 
-    await fs.writeFile(fullPath, buffer)
+    await fs.writeFile(fullPath, buffer);
 
-    return fullPath
+    return fullPath;
   }
 }

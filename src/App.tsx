@@ -1,158 +1,109 @@
-import { Dropzone } from './components/Dropzone'
-import { FileTree } from './components/FileTree'
-import { ValidationSummary } from './components/ValidationSummary'
+import { Dropzone } from "./components/Dropzone";
+import { FileTree } from "./components/FileTree";
+import { ValidationSummary } from "./components/ValidationSummary";
 
-import { useUploadStore } from './store/uploadStore'
+import { useUploadStore } from "./store/uploadStore";
 
-import { buildFileTree } from './utils/buildFileTree'
+import { buildFileTree } from "./utils/buildFileTree";
 
-import { useEffect } from 'react'
+import { useEffect } from "react";
 
-import { getSession } from './api/uploadApi'
+import { getSession } from "./api/uploadApi";
 
-import {
-  getSessionId,
-  clearSessionId,
-} from './utils/sessionStorage'
+import { getSessionId, clearSessionId } from "./utils/sessionStorage";
 
-import { UploadQueue } from './components/UploadQueue'
+import { UploadQueue } from "./components/UploadQueue";
 
 function App() {
   useEffect(() => {
     async function restoreSession() {
-      const storedSessionId =
-        getSessionId()
+      const storedSessionId = getSessionId();
 
       if (!storedSessionId) {
-        return
+        return;
       }
 
       try {
-        setLoading(true)
+        setLoading(true);
 
-        const session =
-          await getSession(
-            storedSessionId,
-          )
+        const session = await getSession(storedSessionId);
 
-        setSessionId(session.id)
+        setSessionId(session.id);
 
-        setFiles(session.files)
+        setFiles(session.files);
       } catch (error) {
-        console.error(
-          'Failed to restore session',
-          error,
-        )
+        console.error("Failed to restore session", error);
 
-        clearSessionId()
+        clearSessionId();
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
 
-    restoreSession()
-  }, [])
+    restoreSession();
+  }, []);
 
   const removeUnapprovedFiles = useUploadStore(
     (state) => state.removeUnapprovedFiles,
-  )
+  );
 
-  const uploadQueue =
-    useUploadStore(
-      (state) =>
-        state.uploadQueue,
-    )
+  const uploadQueue = useUploadStore((state) => state.uploadQueue);
 
-  const clearFiles = useUploadStore(
-    (state) => state.clearFiles,
-  )
+  const clearFiles = useUploadStore((state) => state.clearFiles);
 
-  const loading = useUploadStore(
-    (state) => state.loading,
-  )
+  const loading = useUploadStore((state) => state.loading);
 
-  const setFiles = useUploadStore(
-    (state) => state.setFiles,
-  )
+  const setFiles = useUploadStore((state) => state.setFiles);
 
-  const setSessionId =
-    useUploadStore(
-      (state) =>
-        state.setSessionId,
-    )
+  const setSessionId = useUploadStore((state) => state.setSessionId);
 
-  const setLoading =
-    useUploadStore(
-      (state) =>
-        state.setLoading,
-    )
-
-  
+  const setLoading = useUploadStore((state) => state.setLoading);
 
   const tree = buildFileTree(
     uploadQueue.map((item) => ({
       id: item.id,
 
-      sessionId: '',
+      sessionId: "",
 
-      originalName:
-        item.file.name,
+      originalName: item.file.name,
 
-      relativePath:
-        item.relativePath,
+      relativePath: item.relativePath,
 
-      extension:
-        item.file.name.substring(
-          item.file.name.lastIndexOf(
-            '.',
-          ),
-        ),
+      extension: item.file.name.substring(item.file.name.lastIndexOf(".")),
 
-      storedPath: '',
+      storedPath: "",
 
-      validationState:
-        item.validationState ??
-        'allowed',
+      validationState: item.validationState ?? "allowed",
 
-      validationMessage: item.validationMessage ?? '',
+      validationMessage: item.validationMessage ?? "",
 
       messageId: 0,
 
-      createdAt:
-        item.createdAt,
+      createdAt: item.createdAt,
 
       size: item.file.size,
     })),
-  )
+  );
 
   return (
     <div className="min-h-screen bg-slate-900 p-8 text-white">
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
-          <h1 className="text-4xl font-bold">
-            File Transfer MVP
-          </h1>
+          <h1 className="text-4xl font-bold">File Transfer MVP</h1>
 
           <p className="mt-2 text-slate-400">
-            React migration prototype
-            for upload validation.
+            React migration prototype for upload validation.
           </p>
         </div>
 
         <Dropzone />
 
-        <ValidationSummary
-          uploadQueue={
-            uploadQueue
-          }
-        />
+        <ValidationSummary uploadQueue={uploadQueue} />
 
         <UploadQueue />
 
         {loading && (
-          <div className="rounded bg-blue-600 p-4">
-            Uploading files...
-          </div>
+          <div className="rounded bg-blue-600 p-4">Uploading files...</div>
         )}
 
         <div className="flex justify-end gap-2">
@@ -174,7 +125,7 @@ function App() {
         <FileTree tree={tree} />
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

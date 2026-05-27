@@ -7,54 +7,41 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
-} from '@nestjs/common'
+} from '@nestjs/common';
 
-import { FileInterceptor } from '@nestjs/platform-express'
+import { FileInterceptor } from '@nestjs/platform-express';
 
-import { UploadService } from './upload.service'
-
+import { UploadService } from './upload.service';
 
 @Controller()
 export class UploadController {
-  constructor(
-    private uploadService: UploadService,
-  ) {}
+  constructor(private uploadService: UploadService) {}
 
   @Post('upload-sessions')
   async createSession() {
-    return this.uploadService.createSession()
+    return this.uploadService.createSession();
   }
 
   @Get('upload-sessions/:id')
-    async getSession(
-    @Param('id') sessionId: string,
-    ) {
-    return this.uploadService.getSession(
-        sessionId,
-    )
-    }
+  async getSession(@Param('id') sessionId: string) {
+    return this.uploadService.getSession(sessionId);
+  }
 
   @Post('upload-sessions/:id/validate')
   async validateFile(
     @Param('id') sessionId: string,
 
     @Body('extension') extension: string,
-    ) {
+  ) {
     if (!extension) {
-      throw new BadRequestException(
-        'Extension is required',
-      )
+      throw new BadRequestException('Extension is required');
     }
 
-    return this.uploadService.validateExtension(
-      extension,
-    )
-    }
+    return this.uploadService.validateExtension(extension);
+  }
 
   @Post('upload-sessions/:id/files')
-  @UseInterceptors(
-    FileInterceptor('file'),
-  )
+  @UseInterceptors(FileInterceptor('file'))
   async uploadFile(
     @Param('id') sessionId: string,
 
@@ -63,17 +50,13 @@ export class UploadController {
 
     @Body('relativePath')
     relativePath: string,
-    ) {
+  ) {
     if (!file) {
-        throw new BadRequestException(
+      throw new BadRequestException(
         'No file uploaded. Ensure multipart/form-data is correct.',
-        )
+      );
     }
 
-    return this.uploadService.uploadFile(
-        sessionId,
-        file,
-        relativePath,
-    )
-    }
+    return this.uploadService.uploadFile(sessionId, file, relativePath);
+  }
 }

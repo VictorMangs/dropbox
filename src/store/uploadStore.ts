@@ -1,375 +1,297 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
-import type { UploadRecord, UploadQueueItem } from '../types/upload'
-import { clearSessionId, saveSessionId } from '../utils/sessionStorage'
-import { createSession, getSession, validateFileExtension } from '../api/uploadApi'
-import { processUploads } from '../services/uploadOrchestrator'
+import type { UploadRecord, UploadQueueItem } from "../types/upload";
+import { clearSessionId, saveSessionId } from "../utils/sessionStorage";
+import {
+  createSession,
+  getSession,
+  validateFileExtension,
+} from "../api/uploadApi";
+import { processUploads } from "../services/uploadOrchestrator";
 
 interface UploadStore {
-  sessionId: string | null
+  sessionId: string | null;
 
-  files: UploadRecord[]
+  files: UploadRecord[];
 
-	uploadQueue: UploadQueueItem[]
+  uploadQueue: UploadQueueItem[];
 
-  loading: boolean
+  loading: boolean;
 
-  setSessionId: (
-    sessionId: string,
-  ) => void
+  setSessionId: (sessionId: string) => void;
 
-  setFiles: (
-    files: UploadRecord[],
-  ) => void
+  setFiles: (files: UploadRecord[]) => void;
 
-  setLoading: (
-    loading: boolean,
-  ) => void
+  setLoading: (loading: boolean) => void;
 
-  clearFiles: () => void
+  clearFiles: () => void;
 
-	setUploadQueue: (
-		queue: UploadQueueItem[],
-	) => void
+  setUploadQueue: (queue: UploadQueueItem[]) => void;
 
-	updateQueueItem: (
-		id: string,
-		updates: Partial<UploadQueueItem>,
-	) => void
+  updateQueueItem: (id: string, updates: Partial<UploadQueueItem>) => void;
 
-	retryQueueItem: (
-  	id: string,
-	) => void
-  
-  cancelQueueItem: (
-    id: string,
-  ) => void
+  retryQueueItem: (id: string) => void;
 
-  cancelAllUploads: () => void
+  cancelQueueItem: (id: string) => void;
 
-  startTransfer: () => Promise<void>
+  cancelAllUploads: () => void;
 
-  startCyberTransfer: () => Promise<void>
+  startTransfer: () => Promise<void>;
 
-  validateQueuedFiles: () => Promise<void>
-  
-  removeUnapprovedFiles: () => void
+  startCyberTransfer: () => Promise<void>;
 
-  resetTransferState: () => void
+  validateQueuedFiles: () => Promise<void>;
+
+  removeUnapprovedFiles: () => void;
+
+  resetTransferState: () => void;
 }
 
-export const useUploadStore =
-  create<UploadStore>((set) => ({
-    sessionId: null,
+export const useUploadStore = create<UploadStore>((set) => ({
+  sessionId: null,
 
-    files: [],
+  files: [],
 
-		uploadQueue: [],
+  uploadQueue: [],
 
-    loading: false,
+  loading: false,
 
-    setSessionId: (
+  setSessionId: (sessionId) =>
+    set(() => ({
       sessionId,
-    ) =>
-      set(() => ({
-        sessionId,
-      })),
-
-    setFiles: (files) =>
-      set(() => ({
-        files,
-      })),
-
-    setLoading: (
-      loading,
-    ) =>
-      set(() => ({
-        loading,
-      })),
-
-    clearFiles: () => {
-			clearSessionId()
-
-			set(() => ({
-					sessionId: null,
-					files: [],
-			}))
-			},
-
-		setUploadQueue: (
-			uploadQueue,
-		) =>
-			set(() => ({
-				uploadQueue,
-			})),
-    
-    resetTransferState:
-      () => {
-        set({
-          uploadQueue: [],
-          loading: false,
-          sessionId: undefined,
-        })
-      },
-
-		updateQueueItem: (
-			id,
-			updates,
-		) =>
-			set((state) => ({
-				uploadQueue:
-					state.uploadQueue.map(
-						(item) =>
-							item.id === id
-								? {
-										...item,
-										...updates,
-									}
-								: item,
-					),
-		})),
-		
-  retryQueueItem: (
-    id,
-  ) =>
-    set((state) => ({
-      uploadQueue:
-        state.uploadQueue.map(
-          (item) =>
-            item.id === id
-              ? {
-                  ...item,
-                  status:
-                    'pending',
-                  progress: 0,
-                  error: undefined,
-                }
-              : item,
-        ),
     })),
-      
-    cancelQueueItem: (
-      id,
-    ) =>
-      set((state) => ({
-        uploadQueue:
-          state.uploadQueue.map(
-            (item) => {
-              if (
-                item.id !== id
-              ) {
-                return item
-              }
 
-              item.abortController?.abort()
+  setFiles: (files) =>
+    set(() => ({
+      files,
+    })),
 
-              return {
-                ...item,
-                status:
-                  'cancelled',
-              }
-            },
-          ),
-      })),
+  setLoading: (loading) =>
+    set(() => ({
+      loading,
+    })),
+
+  clearFiles: () => {
+    clearSessionId();
+
+    set(() => ({
+      sessionId: null,
+      files: [],
+    }));
+  },
+
+  setUploadQueue: (uploadQueue) =>
+    set(() => ({
+      uploadQueue,
+    })),
+
+  resetTransferState: () => {
+    set({
+      uploadQueue: [],
+      loading: false,
+      sessionId: undefined,
+    });
+  },
+
+  updateQueueItem: (id, updates) =>
+    set((state) => ({
+      uploadQueue: state.uploadQueue.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              ...updates,
+            }
+          : item,
+      ),
+    })),
+
+  retryQueueItem: (id) =>
+    set((state) => ({
+      uploadQueue: state.uploadQueue.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              status: "pending",
+              progress: 0,
+              error: undefined,
+            }
+          : item,
+      ),
+    })),
+
+  cancelQueueItem: (id) =>
+    set((state) => ({
+      uploadQueue: state.uploadQueue.map((item) => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        item.abortController?.abort();
+
+        return {
+          ...item,
+          status: "cancelled",
+        };
+      }),
+    })),
 
   cancelAllUploads: () =>
     set((state) => {
-      state.uploadQueue.forEach(
-        (item) => {
-          item.abortController?.abort()
-        },
-      )
+      state.uploadQueue.forEach((item) => {
+        item.abortController?.abort();
+      });
 
       return {
-        uploadQueue:
-          state.uploadQueue.map(
-            (item) =>
-              item.status ===
-              'completed'
-                ? item
-                : {
-                    ...item,
-                    status:
-                      'cancelled',
-                  },
-          ),
-      }
+        uploadQueue: state.uploadQueue.map((item) =>
+          item.status === "completed"
+            ? item
+            : {
+                ...item,
+                status: "cancelled",
+              },
+        ),
+      };
     }),
 
   removeUnapprovedFiles: () =>
     set((state) => ({
       uploadQueue: state.uploadQueue.filter(
-        (item) =>
-          item.validationState !== 'blocked'
+        (item) => item.validationState !== "blocked",
       ),
     })),
 
   validateQueuedFiles: async () => {
-    const state = useUploadStore.getState()
-    
+    const state = useUploadStore.getState();
+
     if (state.uploadQueue.length === 0 || state.sessionId === null) {
-      return
+      return;
     }
 
     try {
-      state.setLoading(true)
+      state.setLoading(true);
 
       const validationResults = await Promise.all(
         state.uploadQueue.map(async (item) => {
-          const extension =
-            item.file.name.substring(
-              item.file.name.lastIndexOf('.')
-            )
+          const extension = item.file.name.substring(
+            item.file.name.lastIndexOf("."),
+          );
 
-          const validation =
-            await validateFileExtension(
-              state.sessionId!,
-              extension,
-            )
+          const validation = await validateFileExtension(
+            state.sessionId!,
+            extension,
+          );
 
           return {
             id: item.id,
             updates: {
-              validationState:
-                validation.state,
-                validationMessage: validation.message,
+              validationState: validation.state,
+              validationMessage: validation.message,
             },
-          }
-        })
-      )
+          };
+        }),
+      );
 
       for (const { id, updates } of validationResults) {
-        state.updateQueueItem(id, updates)
+        state.updateQueueItem(id, updates);
       }
     } catch (error) {
-      console.error(error)
+      console.error(error);
     } finally {
-      state.setLoading(false)
+      state.setLoading(false);
     }
   },
 
   startTransfer: async () => {
-    const state = useUploadStore.getState()
-    
+    const state = useUploadStore.getState();
+
     if (state.uploadQueue.length === 0) {
-      return
+      return;
     }
 
     try {
-      state.setLoading(true)
+      state.setLoading(true);
 
-      const session =
-        await createSession()
+      const session = await createSession();
 
-      state.setSessionId(session.id)
-      saveSessionId(session.id)
+      state.setSessionId(session.id);
+      saveSessionId(session.id);
 
       await processUploads({
         queue: state.uploadQueue,
         sessionId: session.id,
-        updateQueueItem:
-          state.updateQueueItem,
-      })
+        updateQueueItem: state.updateQueueItem,
+      });
 
-      const updatedSession =
-        await getSession(session.id)
+      const updatedSession = await getSession(session.id);
 
-      state.setFiles(
-        updatedSession.files,
-      )
-      
-      await new Promise(
-        (resolve) =>
-          setTimeout(resolve, 500),
-      )
+      state.setFiles(updatedSession.files);
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       window.alert(
-        'File upload is successfully queued and will be processed shortly.',
-      )
-      state.resetTransferState()
-
+        "File upload is successfully queued and will be processed shortly.",
+      );
+      state.resetTransferState();
     } catch (error) {
-      console.error(error)
+      console.error(error);
     } finally {
-      state.setLoading(false)
+      state.setLoading(false);
     }
   },
 
   startCyberTransfer: async () => {
-    const state = useUploadStore.getState()
+    const state = useUploadStore.getState();
 
-    const cyberFiles =
-      state.uploadQueue.filter(
-        (item) =>
-          item.validationState === 'cyber' || item.validationState === 'allowed',
-      )
+    const cyberFiles = state.uploadQueue.filter(
+      (item) =>
+        item.validationState === "cyber" || item.validationState === "allowed",
+    );
 
     // Prevent transfer if blocked files exist
-    const hasBlocked =
-      state.uploadQueue.some(
-        (item) =>
-          item.validationState === 'blocked',
-      )
+    const hasBlocked = state.uploadQueue.some(
+      (item) => item.validationState === "blocked",
+    );
 
     if (hasBlocked) {
-      console.warn(
-        'Blocked files present',
-      )
+      console.warn("Blocked files present");
 
-      return
+      return;
     }
 
     if (cyberFiles.length === 0) {
-      return
+      return;
     }
 
     try {
-      state.setLoading(true)
+      state.setLoading(true);
 
-      const session =
-        await createSession()
+      const session = await createSession();
 
-      state.setSessionId(
-        session.id,
-      )
+      state.setSessionId(session.id);
 
-      saveSessionId(
-        session.id,
-      )
+      saveSessionId(session.id);
 
       await processUploads({
         queue: cyberFiles,
 
-        sessionId:
-          session.id,
+        sessionId: session.id,
 
-        updateQueueItem:
-          state.updateQueueItem,
-      })
+        updateQueueItem: state.updateQueueItem,
+      });
 
-      const updatedSession =
-        await getSession(
-          session.id,
-        )
+      const updatedSession = await getSession(session.id);
 
-      state.setFiles(
-        updatedSession.files,
-      )
-      await new Promise(
-        (resolve) =>
-          setTimeout(resolve, 500),
-      )
-      
+      state.setFiles(updatedSession.files);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       window.alert(
-        'Cyber upload is successfully queued and will be processed shortly.',
-      )
-      state.resetTransferState()
-
+        "Cyber upload is successfully queued and will be processed shortly.",
+      );
+      state.resetTransferState();
     } catch (error) {
-      console.error(error)
+      console.error(error);
     } finally {
-      state.setLoading(false)
+      state.setLoading(false);
     }
   },
-    
-  }))
+}));
