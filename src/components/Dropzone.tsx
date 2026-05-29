@@ -24,7 +24,7 @@ export function Dropzone() {
   const validateQueuedFiles = useUploadStore(
     (state) => state.validateQueuedFiles,
   );
-
+  
   const onDrop = async (acceptedFiles: File[]) => {
     try {
       const session = await createSession();
@@ -48,11 +48,13 @@ export function Dropzone() {
         createdAt: new Date().toISOString(),
 
         retryCount: 0,
+
+        validationState: "pending",
       }));
 
       setUploadQueue(queue);
 
-      await validateQueuedFiles();
+      await validateQueuedFiles(queue);
     } catch (error) {
       console.error(error);
     }

@@ -41,7 +41,7 @@ interface UploadStore {
 
   startCyberTransfer: () => Promise<void>;
 
-  validateQueuedFiles: () => Promise<void>;
+  validateQueuedFiles: (queue?: UploadQueueItem[]) => Promise<void>;
 
   removeUnapprovedFiles: () => void;
 
@@ -175,42 +175,92 @@ export const useUploadStore = create<UploadStore>((set) => ({
       ),
     })),
 
-  validateQueuedFiles: async () => {
+  validateQueuedFiles: async (queueOverride) => {
     const state = useUploadStore.getState();
 
-    if (state.uploadQueue.length === 0 || state.sessionId === null) {
+    const queue = queueOverride ?? state.uploadQueue;
+
+    if (queue.length === 0 || state.sessionId === null) {
       return;
     }
+
+    const CONCURRENT_VALIDATIONS = 10;
 
     try {
       state.setLoading(true);
 
-      const validationResults = await Promise.all(
-        state.uploadQueue.map(async (item) => {
-          const fileName = item.file.name;
+      for (let i = 0; i < queue.length; i += CONCURRENT_VALIDATIONS) {
+        const chunk = queue.slice(i, i + CONCURRENT_VALIDATIONS);
 
-          const lastDot = fileName.lastIndexOf(".");
+        const results = await Promise.allSettled(
+          chunk.map(async (item) => {
+            const fileName = item.file.name;
 
-          const extension =
-            lastDot > 0 ? fileName.slice(lastDot).toLowerCase() : "";
+            const lastDot = fileName.lastIndexOf(".");
 
-          const validation = await validateFileExtension(
-            state.sessionId!,
-            extension,
-          );
+            const extension =
+              lastDot > 0 ? fileName.slice(lastDot).toLowerCase() : "";
 
-          return {
-            id: item.id,
-            updates: {
+            const validation = await validateFileExtension(
+              state.sessionId!,
+              extension,
+            );
+
+            return {
+              id: item.id,
               validationState: validation.state,
               validationMessage: validation.message,
-            },
-          };
-        }),
-      );
+            };
+          }),
+        );
 
-      for (const { id, updates } of validationResults) {
-        state.updateQueueItem(id, updates);
+        const updates = new Map<
+          string,
+          {
+            validationState: UploadQueueItem["validationState"];
+            validationMessage?: string;
+          }
+        >();
+
+        for (let j = 0; j < results.length; j++) {
+          const result = results[j];
+
+          const item = chunk[j];
+
+          if (result.status === "fulfilled") {
+            updates.set(item.id, {
+              validationState: result.value.validationState,
+              validationMessage: result.value.validationMessage,
+            });
+          } else {
+            console.error(
+              "Validation failed:",
+              item.relativePath,
+              result.reason,
+            );
+
+            updates.set(item.id, {
+              validationState: "blocked",
+              validationMessage: "Validation failed",
+            });
+          }
+        }
+
+        set((currentState) => ({
+          uploadQueue: currentState.uploadQueue.map((item) => {
+            const update = updates.get(item.id);
+
+            if (!update) {
+              return item;
+            }
+
+            return {
+              ...item,
+              validationState: update.validationState,
+              validationMessage: update.validationMessage,
+            };
+          }),
+        }));
       }
     } catch (error) {
       console.error(error);

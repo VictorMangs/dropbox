@@ -1,13 +1,18 @@
 import type { TreeNode, UploadRecord, ValidationState } from "../types/upload";
 
+type InternalTreeNode = TreeNode & {
+  childrenMap?: Map<string, InternalTreeNode>;
+};
+
 function getWorstValidation(
   existing: ValidationState | undefined,
   incoming: ValidationState,
 ): ValidationState {
   const priority = {
     allowed: 0,
-    cyber: 1,
-    blocked: 2,
+    pending: 1,
+    cyber: 2,
+    blocked: 3,
   };
 
   if (!existing) {
@@ -17,75 +22,111 @@ function getWorstValidation(
   return priority[incoming] > priority[existing] ? incoming : existing;
 }
 
-export function buildFileTree(files: UploadRecord[]): TreeNode[] {
-  const root: TreeNode[] = [];
+export function buildFileTree(
+  files: UploadRecord[],
+): TreeNode[] {
+  const root: InternalTreeNode[] = [];
+
+  const rootMap = new Map<string, InternalTreeNode>();
 
   for (const uploadFile of files) {
     const parts = uploadFile.relativePath.split("/");
 
-    let currentLevel = root;
+    let currentChildren = root;
+
+    let currentMap = rootMap;
+
     let currentPath = "";
 
-    parts.forEach((part, index) => {
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
+    for (let index = 0; index < parts.length; index++) {
+      const part = parts[index];
+
+      currentPath = currentPath
+        ? `${currentPath}/${part}`
+        : part;
 
       const isFile = index === parts.length - 1;
 
-      let existing = currentLevel.find((node) => node.name === part);
+      let node = currentMap.get(part);
 
-      if (!existing) {
-        existing = {
+      if (!node) {
+        node = {
           name: part,
-
           path: currentPath,
-
           type: isFile ? "file" : "folder",
-
           children: isFile ? undefined : [],
+          childrenMap: isFile
+            ? undefined
+            : new Map<string, InternalTreeNode>(),
         };
 
-        currentLevel.push(existing);
+        currentMap.set(part, node);
+
+        currentChildren.push(node);
       }
 
       if (isFile) {
-        existing.validation = uploadFile.validationState;
+        node.validation = uploadFile.validationState;
 
-        existing.validationMessage = uploadFile.validationMessage;
+        node.validationMessage =
+          uploadFile.validationMessage;
 
-        existing.extension = uploadFile.extension;
+        node.extension = uploadFile.extension;
 
-        existing.size = uploadFile.size;
+        node.size = uploadFile.size;
       }
 
-      if (!isFile && existing.children) {
-        currentLevel = existing.children;
+      if (
+        node.type === "folder" &&
+        node.children &&
+        node.childrenMap
+      ) {
+        currentChildren =
+          node.children as InternalTreeNode[];
+
+        currentMap = node.childrenMap;
       }
-    });
+    }
   }
 
   propagateFolderValidation(root);
 
+  stripInternalMaps(root);
+
   return root;
 }
 
-function propagateFolderValidation(nodes: TreeNode[]): ValidationState {
+function stripInternalMaps(
+  nodes: InternalTreeNode[],
+) {
+  for (const node of nodes) {
+    delete node.childrenMap;
+
+    if (node.children) {
+      stripInternalMaps(
+        node.children as InternalTreeNode[],
+      );
+    }
+  }
+}
+
+function propagateFolderValidation(nodes: TreeNode[]): {
+  validation: ValidationState;
+  blockedCount: number;
+  cyberCount: number;
+  allowedCount: number;
+  fileCount: number;
+} {
   let worst: ValidationState = "allowed";
 
   let blockedCount = 0;
-
   let cyberCount = 0;
-
   let allowedCount = 0;
-
-  let totalFiles = 0;
+  let fileCount = 0;
 
   for (const node of nodes) {
-    if (node.type === "folder" && node.children) {
-      node.validation = propagateFolderValidation(node.children);
-    }
-
     if (node.type === "file") {
-      totalFiles += 1;
+      fileCount += 1;
 
       switch (node.validation) {
         case "blocked":
@@ -100,34 +141,44 @@ function propagateFolderValidation(nodes: TreeNode[]): ValidationState {
           allowedCount += 1;
           break;
       }
+
+      if (node.validation) {
+        worst = getWorstValidation(worst, node.validation);
+      }
+
+      continue;
     }
 
-    if (node.children) {
-      blockedCount += node.blockedCount ?? 0;
+    if (node.type === "folder" && node.children) {
+      const childSummary = propagateFolderValidation(node.children);
 
-      cyberCount += node.cyberCount ?? 0;
+      node.validation = childSummary.validation;
 
-      allowedCount += node.allowedCount ?? 0;
+      node.blockedCount = childSummary.blockedCount;
 
-      totalFiles += node.fileCount ?? 0;
-    }
+      node.cyberCount = childSummary.cyberCount;
 
-    if (node.validation) {
-      worst = getWorstValidation(worst, node.validation);
+      node.allowedCount = childSummary.allowedCount;
+
+      node.fileCount = childSummary.fileCount;
+
+      blockedCount += childSummary.blockedCount;
+
+      cyberCount += childSummary.cyberCount;
+
+      allowedCount += childSummary.allowedCount;
+
+      fileCount += childSummary.fileCount;
+
+      worst = getWorstValidation(worst, childSummary.validation);
     }
   }
 
-  for (const node of nodes) {
-    if (node.type === "folder") {
-      node.blockedCount = blockedCount;
-
-      node.cyberCount = cyberCount;
-
-      node.allowedCount = allowedCount;
-
-      node.fileCount = totalFiles;
-    }
-  }
-
-  return worst;
+  return {
+    validation: worst,
+    blockedCount,
+    cyberCount,
+    allowedCount,
+    fileCount,
+  };
 }

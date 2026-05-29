@@ -1,4 +1,4 @@
-export type ValidationState = "allowed" | "cyber" | "blocked";
+export type ValidationState = "allowed" | "cyber" | "blocked" | "pending";
 
 export type UploadStatus =
   | "pending"
@@ -22,7 +22,7 @@ export interface UploadRecord {
 
   storedPath: string;
 
-  validationState: ValidationState;
+  validationState?: ValidationState | "pending";
 
   validationMessage: string;
 
@@ -54,7 +54,7 @@ export interface UploadQueueItem {
 
   retryCount: number;
 
-  validationState?: ValidationState;
+  validationState?: ValidationState | "pending";
 
   validationMessage?: string;
 }
@@ -74,7 +74,7 @@ export interface TreeNode {
 
   type: "file" | "folder";
 
-  validation?: ValidationState;
+  validation?: ValidationState | "pending";
 
   validationMessage?: string;
 
