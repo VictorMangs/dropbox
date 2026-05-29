@@ -1,4 +1,5 @@
 import { useUploadStore } from "../store/uploadStore";
+import type { UploadPriority } from "../types/upload";
 
 export function UploadQueue() {
   const uploadQueue = useUploadStore((state) => state.uploadQueue);
@@ -155,7 +156,7 @@ export function UploadQueue() {
                 value={item.priority}
                 onChange={(e) =>
                   updateQueueItem(item.id, {
-                    priority: e.target.value as any,
+                    priority: e.target.value as UploadPriority,
                   })
                 }
                 className="rounded bg-slate-700 px-2 py-1 text-xs"

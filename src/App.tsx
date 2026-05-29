@@ -6,13 +6,17 @@ import { useUploadStore } from "./store/uploadStore";
 
 import { buildFileTree } from "./utils/buildFileTree";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import { getSession } from "./api/uploadApi";
 
 import { getSessionId, clearSessionId } from "./utils/sessionStorage";
 
 import { UploadQueue } from "./components/UploadQueue";
+
+import { Toaster } from "sonner";
+
+import { CyberDisclaimerDialog } from "./components/CyberDisclaimerDialog";
 
 function App() {
   const removeUnapprovedFiles = useUploadStore(
@@ -24,7 +28,7 @@ function App() {
   const setFiles = useUploadStore((state) => state.setFiles);
   const setSessionId = useUploadStore((state) => state.setSessionId);
   const setLoading = useUploadStore((state) => state.setLoading);
-  
+
   useEffect(() => {
     async function restoreSession() {
       const storedSessionId = getSessionId();
@@ -37,7 +41,7 @@ function App() {
         setLoading(true);
 
         const session = await getSession(storedSessionId);
-        
+
         if (!session?.id) {
           throw new Error("Invalid session response");
         }
@@ -57,34 +61,40 @@ function App() {
     restoreSession();
   }, []);
 
-  const tree = buildFileTree(
-    uploadQueue.map((item) => ({
-      id: item.id,
-      
-      sessionId: "", 
+  const tree = useMemo(
+    () =>
+      buildFileTree(
+        uploadQueue.map((item) => ({
+          id: item.id,
 
-      originalName: item.file.name,
+          sessionId: "",
 
-      relativePath: item.relativePath,
+          originalName: item.file.name,
 
-      extension: item.file.name.substring(item.file.name.lastIndexOf(".")),
+          relativePath: item.relativePath,
 
-      storedPath: "",
+          extension: item.file.name.substring(item.file.name.lastIndexOf(".")),
 
-      validationState: item.validationState ?? "allowed",
+          storedPath: "",
 
-      validationMessage: item.validationMessage ?? "",
+          validationState: item.validationState ?? "allowed",
 
-      messageId: 0,
+          validationMessage: item.validationMessage ?? "",
 
-      createdAt: item.createdAt,
+          messageId: 0,
 
-      size: item.file.size,
-    })),
+          createdAt: item.createdAt,
+
+          size: item.file.size,
+        })),
+      ),
+    [uploadQueue],
   );
 
   return (
     <div className="min-h-screen bg-slate-900 p-8 text-white">
+      <Toaster position="bottom-right" richColors />
+      <CyberDisclaimerDialog />
       <div className="mx-auto max-w-6xl space-y-6">
         <div>
           <h1 className="text-4xl font-bold">File Transfer MVP</h1>
@@ -113,9 +123,8 @@ function App() {
         </div>
 
         <ValidationSummary uploadQueue={uploadQueue} />
-        
-        <UploadQueue />
 
+        <UploadQueue />
 
         {loading && (
           <div className="rounded bg-blue-600 p-4">Uploading files...</div>

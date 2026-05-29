@@ -1,13 +1,10 @@
 import { create } from "zustand";
 
 import type { UploadRecord, UploadQueueItem } from "../types/upload";
-import { clearSessionId, saveSessionId } from "../utils/sessionStorage";
-import {
-  createSession,
-  getSession,
-  validateFileExtension,
-} from "../api/uploadApi";
+import { clearSessionId } from "../utils/sessionStorage";
+import { getSession, validateFileExtension } from "../api/uploadApi";
 import { processUploads } from "../services/uploadOrchestrator";
+import { toast } from "sonner";
 
 interface UploadStore {
   sessionId: string | null;
@@ -17,6 +14,10 @@ interface UploadStore {
   uploadQueue: UploadQueueItem[];
 
   loading: boolean;
+
+  showCyberDisclaimer: boolean;
+
+  setShowCyberDisclaimer: (show: boolean) => void;
 
   setSessionId: (sessionId: string) => void;
 
@@ -56,6 +57,11 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
   loading: false,
 
+  showCyberDisclaimer: false,
+
+  setShowCyberDisclaimer: (showCyberDisclaimer) =>
+    set(() => ({ showCyberDisclaimer })),
+
   setSessionId: (sessionId) =>
     set(() => ({
       sessionId,
@@ -75,14 +81,15 @@ export const useUploadStore = create<UploadStore>((set) => ({
     clearSessionId();
 
     set((state) => {
-      state.uploadQueue.forEach((item) => {
+      for (const item of state.uploadQueue) {
         item.abortController?.abort();
-      });
+      }
 
       return {
         sessionId: null,
         files: [],
         uploadQueue: [],
+        showCyberDisclaimer: false,
       };
     });
   },
@@ -96,7 +103,6 @@ export const useUploadStore = create<UploadStore>((set) => ({
     set({
       uploadQueue: [],
       loading: false,
-      sessionId: null,
     });
   },
 
@@ -127,26 +133,28 @@ export const useUploadStore = create<UploadStore>((set) => ({
     })),
 
   cancelQueueItem: (id) =>
-    set((state) => ({
-      uploadQueue: state.uploadQueue.map((item) => {
-        if (item.id !== id) {
-          return item;
-        }
+    set((state) => {
+      const target = state.uploadQueue.find((item) => item.id === id);
 
-        item.abortController?.abort();
+      target?.abortController?.abort();
 
-        return {
-          ...item,
-          status: "cancelled",
-        };
-      }),
-    })),
+      return {
+        uploadQueue: state.uploadQueue.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status: "cancelled",
+              }
+            : item,
+        ),
+      };
+    }),
 
   cancelAllUploads: () =>
     set((state) => {
-      state.uploadQueue.forEach((item) => {
+      for (const item of state.uploadQueue) {
         item.abortController?.abort();
-      });
+      }
 
       return {
         uploadQueue: state.uploadQueue.map((item) =>
@@ -179,7 +187,12 @@ export const useUploadStore = create<UploadStore>((set) => ({
 
       const validationResults = await Promise.all(
         state.uploadQueue.map(async (item) => {
-          const extension = "." + item.file.name.split(".").pop()?.toLowerCase();
+          const fileName = item.file.name;
+
+          const lastDot = fileName.lastIndexOf(".");
+
+          const extension =
+            lastDot > 0 ? fileName.slice(lastDot).toLowerCase() : "";
 
           const validation = await validateFileExtension(
             state.sessionId!,
@@ -216,26 +229,27 @@ export const useUploadStore = create<UploadStore>((set) => ({
     try {
       state.setLoading(true);
 
-      const session = await createSession();
+      if (!state.sessionId) {
+        throw new Error("No active upload session");
+      }
 
-      state.setSessionId(session.id);
-      saveSessionId(session.id);
+      const sessionId = state.sessionId;
 
       await processUploads({
         queue: state.uploadQueue,
-        sessionId: session.id,
+        sessionId: sessionId,
         updateQueueItem: state.updateQueueItem,
       });
 
-      const updatedSession = await getSession(session.id);
+      const updatedSession = await getSession(sessionId);
 
       state.setFiles(updatedSession.files);
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      queueMicrotask(() => {
-        console.info("File upload is successfully queued and will be processed shortly.");
-      });
+      toast.success(
+        "File upload is successfully queued and will be processed shortly.",
+      );
 
       state.resetTransferState();
     } catch (error) {
@@ -259,42 +273,34 @@ export const useUploadStore = create<UploadStore>((set) => ({
       return;
     }
 
-   const cyberFiles = state.uploadQueue.filter(
+    const cyberFiles = state.uploadQueue.filter(
       (item) =>
-        item.validationState === "cyber" ||
-        item.validationState === "allowed",
+        item.validationState === "cyber" || item.validationState === "allowed",
     );
 
     if (cyberFiles.length === 0) return;
-    
 
     try {
       state.setLoading(true);
 
-      const session = await createSession();
+      if (!state.sessionId) {
+        throw new Error("No active upload session");
+      }
 
-      state.setSessionId(session.id);
-
-      saveSessionId(session.id);
+      const sessionId = state.sessionId;
 
       await processUploads({
         queue: cyberFiles,
-
-        sessionId: session.id,
-
+        sessionId: sessionId,
         updateQueueItem: state.updateQueueItem,
       });
 
-      const updatedSession = await getSession(session.id);
+      const updatedSession = await getSession(sessionId);
 
       state.setFiles(updatedSession.files);
       await new Promise((resolve) => setTimeout(resolve, 500));
-      
-      queueMicrotask(() => {
-        console.info("Cyber upload is successfully queued and will be processed shortly.");
-      });
 
-      state.resetTransferState();
+      state.setShowCyberDisclaimer(true);
     } catch (error) {
       console.error(error);
     } finally {

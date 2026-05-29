@@ -59,62 +59,63 @@ export async function processSingleUpload(
 ) {
   const abortController = new AbortController();
 
-  updateQueueItem(item.id, {
-    status: "uploading",
-    error: undefined,
-    abortController,
-  });
-
-  try {
-    await uploadFile(
-      sessionId,
-      item.file,
-      item.relativePath,
-
-      (progress) => {
-        updateQueueItem(item.id, {
-          progress,
-        });
-      },
-
-      abortController.signal,
-    );
-
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     updateQueueItem(item.id, {
-      status: "completed",
-      progress: 100,
+      status: "uploading",
+      error: undefined,
+      abortController,
+      retryCount: attempt,
     });
-  } catch (error) {
-    if (abortController.signal.aborted) {
-      updateQueueItem(item.id, {
-        status: "cancelled",
 
-        error: "Upload cancelled",
+    try {
+      await uploadFile(
+        sessionId,
+        item.file,
+        item.relativePath,
+        (progress) => {
+          updateQueueItem(item.id, {
+            progress,
+          });
+        },
+        abortController.signal,
+      );
+
+      updateQueueItem(item.id, {
+        status: "completed",
+        progress: 100,
+        error: undefined,
       });
 
       return;
-    }
+    } catch (error) {
+      if (abortController.signal.aborted) {
+        updateQueueItem(item.id, {
+          status: "cancelled",
+          error: "Upload cancelled",
+        });
 
-    const retries = item.retryCount + 1;
+        return;
+      }
 
-    if (retries <= MAX_RETRIES) {
+      const isLastAttempt = attempt === MAX_RETRIES;
+
+      if (isLastAttempt) {
+        updateQueueItem(item.id, {
+          status: "failed",
+          error:
+            error instanceof Error ? error.message : "Upload failed",
+        });
+
+        return;
+      }
+
       updateQueueItem(item.id, {
         status: "pending",
-        retryCount: retries,
-
-        error: `Retrying upload (${retries}/${MAX_RETRIES})`,
+        error: `Retrying upload (${attempt + 1}/${MAX_RETRIES})`,
       });
 
-      await delay(retries * 1000);
-
-      return;
+      await delay((attempt + 1) * 1000);
     }
-
-    updateQueueItem(item.id, {
-      status: "failed",
-
-      error: error instanceof Error ? error.message : "Upload failed",
-    });
   }
 }
 

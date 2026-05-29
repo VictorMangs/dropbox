@@ -4,6 +4,8 @@ import { useUploadStore } from "../store/uploadStore";
 
 import { createSession } from "../api/uploadApi";
 
+import { saveSessionId } from "../utils/sessionStorage";
+
 import type { UploadQueueItem } from "../types/upload";
 
 declare module "react" {
@@ -28,6 +30,7 @@ export function Dropzone() {
       const session = await createSession();
 
       setSessionId(session.id);
+      saveSessionId(session.id);
 
       const queue: UploadQueueItem[] = acceptedFiles.map((file) => ({
         id: crypto.randomUUID(),
