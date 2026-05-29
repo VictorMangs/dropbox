@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import * as path from 'path';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -31,19 +31,20 @@ export class UploadService {
   }
 
   async getSession(sessionId: string) {
-    return this.prisma.uploadSession.findUniqueOrThrow({
-      where: {
-        id: sessionId,
-      },
-
+    const session = await this.prisma.uploadSession.findUnique({
+      where: { id: sessionId },
       include: {
         files: {
-          orderBy: {
-            relativePath: 'asc',
-          },
+          orderBy: { relativePath: 'asc' },
         },
       },
     });
+
+    if (!session) {
+      throw new NotFoundException(`Session ${sessionId} not found`);
+    }
+
+    return session;
   }
 
   private resolveValidation(extension: string) {
@@ -64,10 +65,14 @@ export class UploadService {
     sessionId: string,
     file: Express.Multer.File,
     relativePath: string,
-  ): Promise<any> {
-    const session = await this.prisma.uploadSession.findUniqueOrThrow({
+  ) {
+    const session = await this.prisma.uploadSession.findUnique({
       where: { id: sessionId },
     });
+
+    if (!session) {
+      throw new NotFoundException(`Session ${sessionId} not found`);
+    }
 
     const extension = path.extname(file.originalname).toLowerCase();
 
